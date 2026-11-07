@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { App } from "./App";
@@ -19,11 +19,12 @@ describe("App", () => {
   it("shows a loading message, then the agent's graph", async () => {
     respondWith(200, makeAgent());
 
-    render(<App />);
+    const { container } = render(<App />);
 
     expect(screen.getByText("Loading agent…")).toBeInTheDocument();
     expect(await screen.findByRole("heading", { name: "Clinic scheduler" })).toBeInTheDocument();
-    expect(screen.getByText("collect_details")).toBeInTheDocument();
+    const canvas = container.querySelector(".graph-canvas") as HTMLElement;
+    expect(within(canvas).getByText("collect_details")).toBeInTheDocument();
     expect(fetch).toHaveBeenCalledWith("/api/agent");
   });
 

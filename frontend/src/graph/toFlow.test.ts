@@ -24,13 +24,31 @@ describe("agentToFlow", () => {
         source: "greeting",
         target: "collect_details",
         label: "choose_intent",
+        selected: false,
       },
       {
         id: "collect_details:record_details",
         source: "collect_details",
         target: "confirm",
         label: "record_details",
+        selected: false,
       },
     ]);
+  });
+
+  it("marks the selected node", () => {
+    const { nodes } = agentToFlow(makeAgent(), { kind: "node", name: "confirm" });
+
+    expect(nodes.map((node) => node.selected)).toEqual([false, false, true]);
+  });
+
+  it("marks the selected edge", () => {
+    const { edges } = agentToFlow(makeAgent(), {
+      kind: "edge",
+      node: "collect_details",
+      tool: "record_details",
+    });
+
+    expect(edges.map((edge) => edge.selected)).toEqual([false, true]);
   });
 });
