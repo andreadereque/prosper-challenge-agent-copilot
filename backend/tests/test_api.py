@@ -192,3 +192,28 @@ def test_mock_calls_are_listed_with_real_ones(client, mock_calls):
 
     assert ids[0] == "mock-05-successful-booking"
     assert client.get("/api/calls/mock-03-emergency-ignored").status_code == 200
+
+
+def test_an_issue_can_be_marked_resolved_and_reopened(client):
+    issue = client.post("/api/issues", json={"title": "T", "description": "D"}).json()
+
+    resolved = client.patch(f"/api/issues/{issue['id']}", json={"status": "resolved"})
+    reopened = client.patch(f"/api/issues/{issue['id']}", json={"status": "open"})
+
+    assert resolved.json()["status"] == "resolved"
+    assert reopened.json()["status"] == "open"
+    assert client.get("/api/issues").json()[0]["status"] == "open"
+
+
+def test_marking_an_unknown_issue_is_a_404(client):
+    client.post("/api/issues", json={"title": "T", "description": "D"})
+
+    response = client.patch("/api/issues/missing", json={"status": "resolved"})
+
+    assert response.status_code == 404
+
+
+def test_an_issue_status_must_be_known(client):
+    issue = client.post("/api/issues", json={"title": "T", "description": "D"}).json()
+
+    assert client.patch(f"/api/issues/{issue['id']}", json={"status": "done"}).status_code == 422

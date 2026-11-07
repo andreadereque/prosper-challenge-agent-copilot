@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { makeAgent } from "../test/fixtures";
 import { CopilotPanel } from "./CopilotPanel";
 import { SAMPLE_GUIDELINES } from "./sampleGuidelines";
+import { useCopilotChat } from "./useCopilotChat";
 
 const user = userEvent.setup();
 
@@ -16,9 +17,14 @@ const result = {
   questions: [],
 };
 
+function PanelWithChat({ isReviewing, onResult }: { isReviewing: boolean; onResult: () => void }) {
+  const chat = useCopilotChat(makeAgent(), onResult);
+  return <CopilotPanel chat={chat} isReviewing={isReviewing} />;
+}
+
 function renderPanel(isReviewing = false) {
   const onResult = vi.fn();
-  render(<CopilotPanel agent={makeAgent()} isReviewing={isReviewing} onResult={onResult} />);
+  render(<PanelWithChat isReviewing={isReviewing} onResult={onResult} />);
   return { onResult, box: screen.getByLabelText("Message for the Copilot") };
 }
 

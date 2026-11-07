@@ -104,3 +104,15 @@ class ClientIssue(BaseModel):
 @router.post("/issues")
 def report_issue(issue: ClientIssue) -> dict:
     return issues_store.add_client_issue(issue.title, issue.description, issue.node)
+
+
+class IssueStatus(BaseModel):
+    status: Literal["open", "resolved"]
+
+
+@router.patch("/issues/{issue_id}")
+def update_issue(issue_id: str, update: IssueStatus):
+    issue = issues_store.set_status(issue_id, update.status)
+    if issue is None:
+        return JSONResponse(status_code=404, content={"error": f"No issue with id '{issue_id}'."})
+    return issue

@@ -5,7 +5,7 @@ import pytest
 
 from copilot import service
 from copilot.prompts import build_system_prompt
-from copilot.tools import TOOLS, apply_tool_call
+from copilot.tools import NO_CHANGE, TOOLS, apply_tool_call
 from tests.copilot.fake_openai import FakeOpenAI, calls, says, tool
 
 EXAMPLE_FLOW = Path(__file__).parent.parent.parent / "example_flow.json"
@@ -203,3 +203,9 @@ async def test_after_each_step_the_model_sees_what_is_still_broken(agent):
     assert "- Node 'orphan' cannot be reached from the initial node." in after_first_step
     assert after_second_step == "Done."
     assert result.errors == []
+
+
+def test_an_edit_that_changes_nothing_says_so(agent):
+    unchanged = json.dumps({"from_node": "greeting", "tool": "choose_intent", "new_tool": "choose_intent"})
+
+    assert apply_tool_call(agent, "edit_edge", unchanged) == NO_CHANGE

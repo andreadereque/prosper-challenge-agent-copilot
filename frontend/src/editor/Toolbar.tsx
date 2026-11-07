@@ -4,12 +4,16 @@ import { useState } from "react";
 // when you press Connect, which is why calling needs everything saved first.
 export const TEST_CALL_URL = "http://localhost:7860/client/";
 
+export type View = "graph" | "review";
+
 type ToolbarProps = {
   agentName: string;
   hasUnsavedChanges: boolean;
   isSaving: boolean;
   /** A Copilot proposal is on screen: editing waits until it is accepted or rejected. */
   isReviewing: boolean;
+  view: View;
+  onViewChange: (view: View) => void;
   onAddNode: () => void;
   onNewAgent: () => void;
   onSave: () => void;
@@ -20,6 +24,8 @@ export function Toolbar({
   hasUnsavedChanges,
   isSaving,
   isReviewing,
+  view,
+  onViewChange,
   onAddNode,
   onNewAgent,
   onSave,
@@ -43,6 +49,14 @@ export function Toolbar({
     <header className="toolbar">
       <h1 className="toolbar__title">{agentName}</h1>
       {hasUnsavedChanges && <span className="toolbar__status">Unsaved changes</span>}
+      <nav className="tabs" aria-label="Views">
+        <button type="button" className="tab" aria-pressed={view === "graph"} onClick={() => onViewChange("graph")}>
+          Graph
+        </button>
+        <button type="button" className="tab" aria-pressed={view === "review"} onClick={() => onViewChange("review")}>
+          Calls & issues
+        </button>
+      </nav>
       <div className="toolbar__actions">
         {confirmingNewAgent && (
           <div className="toolbar__confirm" role="group" aria-label="Discard changes">

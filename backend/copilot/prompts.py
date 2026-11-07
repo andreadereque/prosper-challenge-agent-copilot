@@ -13,6 +13,9 @@ How these agents work:
 - An agent is a graph. Each node is one step of the call, with instructions for that step.
 - Each edge is a tool the voice agent calls to move to the next node. Its description says \
 when to call it, and its fields are the data that must be collected first.
+- An edge always leads to one node; its arguments cannot choose where to go. To branch on \
+what the caller says (book or cancel, new or returning patient), add one edge per branch, \
+each with its own tool name, such as choose_book and choose_cancel.
 - The persona applies to every node unless a node has its own role_message.
 - A node with end=true ends the call. Every other node needs at least one edge out.
 - Every node except the initial one needs an edge coming in, or calls can never reach it. \

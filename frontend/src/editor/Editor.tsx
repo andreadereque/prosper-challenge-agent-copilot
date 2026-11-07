@@ -1,15 +1,25 @@
 import { useState } from "react";
 
 import { addEdge, addNode, createBlankAgent, moveNode } from "../agent/agentOps";
-import { AgentValidationFailed, saveAgent, type CopilotResult } from "../api";
+import {
+  AgentValidationFailed,
+  saveAgent,
+  setIssueStatus,
+  type Call,
+  type CopilotResult,
+  type Issue,
+} from "../api";
+import { buildFixRequest } from "../copilot/fixRequest";
 import { CopilotPanel } from "../copilot/CopilotPanel";
+import { useCopilotChat } from "../copilot/useCopilotChat";
 import { diffAgents, hasChanges, mergeForDiff, type AgentDiff } from "../diff/diffAgents";
 import { ProposalPanel } from "../diff/ProposalPanel";
 import { GraphCanvas } from "../graph/GraphCanvas";
+import { ReviewView } from "../review/ReviewView";
 import type { Agent, Selection } from "../types";
 import { SaveProblems } from "./SaveProblems";
 import { SidePanel } from "./SidePanel";
-import { Toolbar } from "./Toolbar";
+import { Toolbar, type View } from "./Toolbar";
 
 export function Editor({ initialAgent }: { initialAgent: Agent }) {
   const [agent, setAgent] = useState(initialAgent);
@@ -19,6 +29,10 @@ export function Editor({ initialAgent }: { initialAgent: Agent }) {
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [saveFailure, setSaveFailure] = useState("");
   const [proposal, setProposal] = useState<CopilotResult | null>(null);
+  const [view, setView] = useState<View>("graph");
+  // The issue the current Copilot request is fixing, so accepting resolves it.
+  const [fixingIssueId, setFixingIssueId] = useState<string | null>(null);
+  const chat = useCopilotChat(agent, handleCopilotResult);
 
   // Updates receive the latest agent, so several changes in one event
   // (for example while dragging) never overwrite each other.
@@ -72,7 +86,9 @@ export function Editor({ initialAgent }: { initialAgent: Agent }) {
     if (hasChanges(diffAgents(agent, result.proposed_agent))) {
       setProposal(result);
       setSelection(null);
+      return;
     }
+    setFixingIssueId(null);
   }
 
   // Accepting uses the same save as a manual edit, with the same validation.
@@ -81,6 +97,26 @@ export function Editor({ initialAgent }: { initialAgent: Agent }) {
     setProposal(null);
     setHasUnsavedChanges(true);
     await save(accepted);
+    if (fixingIssueId) {
+      setFixingIssueId(null);
+      await setIssueStatus(fixingIssueId, "resolved").catch(() => {});
+    }
+  }
+
+  function rejectProposal() {
+    setProposal(null);
+    setFixingIssueId(null);
+  }
+
+  function handleFix(issue: Issue, call: Call | null) {
+    setView("graph");
+    setFixingIssueId(issue.id);
+    chat.send(buildFixRequest(issue, call));
+  }
+
+  function showNode(node: string) {
+    setView("graph");
+    setSelection({ kind: "node", name: node });
   }
 
   let canvasAgent = agent;
@@ -97,36 +133,50 @@ export function Editor({ initialAgent }: { initialAgent: Agent }) {
         hasUnsavedChanges={hasUnsavedChanges}
         isSaving={isSaving}
         isReviewing={Boolean(proposal)}
+        view={view}
+        onViewChange={setView}
         onAddNode={handleAddNode}
         onNewAgent={handleNewAgent}
         onSave={() => save(agent)}
       />
       <SaveProblems validationErrors={validationErrors} failure={saveFailure} />
       <div className="workspace">
-        <GraphCanvas
-          agent={canvasAgent}
-          selection={selection}
-          onSelect={setSelection}
-          onMoveNode={(name, position) => change((current) => moveNode(current, name, position))}
-          onConnect={handleConnect}
-          diff={diff}
-          readOnly={Boolean(proposal)}
-        />
-        <aside className="side-panel">
-          {proposal && (
-            <ProposalPanel
-              diff={diff as AgentDiff}
-              errors={proposal.errors}
-              onAccept={() => acceptProposal(proposal.proposed_agent)}
-              onReject={() => setProposal(null)}
+        {view === "review" && (
+          <ReviewView
+            nodeNames={agent.nodes.map((node) => node.name)}
+            canFix={!proposal && !chat.isThinking}
+            onFix={handleFix}
+            onShowNode={showNode}
+          />
+        )}
+        {view === "graph" && (
+          <>
+            <GraphCanvas
+              agent={canvasAgent}
+              selection={selection}
+              onSelect={setSelection}
+              onMoveNode={(name, position) => change((current) => moveNode(current, name, position))}
+              onConnect={handleConnect}
+              diff={diff}
+              readOnly={Boolean(proposal)}
             />
-          )}
-          {!proposal && (
-            <SidePanel agent={agent} selection={selection} onChange={change} onSelect={setSelection} />
-          )}
-        </aside>
+            <aside className="side-panel">
+              {proposal && (
+                <ProposalPanel
+                  diff={diff as AgentDiff}
+                  errors={proposal.errors}
+                  onAccept={() => acceptProposal(proposal.proposed_agent)}
+                  onReject={rejectProposal}
+                />
+              )}
+              {!proposal && (
+                <SidePanel agent={agent} selection={selection} onChange={change} onSelect={setSelection} />
+              )}
+            </aside>
+          </>
+        )}
         <aside className="copilot-panel">
-          <CopilotPanel agent={agent} isReviewing={Boolean(proposal)} onResult={handleCopilotResult} />
+          <CopilotPanel chat={chat} isReviewing={Boolean(proposal)} />
         </aside>
       </div>
     </div>

@@ -8,6 +8,9 @@ from . import operations
 
 # What the LLM sees when an operation worked.
 DONE = "Done."
+# Seen when an operation was valid but left the agent exactly as it was, which
+# otherwise makes a confused model repeat the same call.
+NO_CHANGE = "Nothing changed: the agent already looked like this. Do not repeat this call."
 
 # Not an edit: the service stops and hands these questions to the user.
 ASK_QUESTIONS = "ask_clarifying_questions"
@@ -175,6 +178,7 @@ def apply_tool_call(agent: dict, name: str, arguments_json: str) -> str:
     operation = _OPERATIONS.get(name)
     if operation is None:
         return f"Error: unknown tool '{name}'."
+    before = json.dumps(agent, sort_keys=True)
     try:
         arguments = json.loads(arguments_json)
         operation(agent, **arguments)
@@ -184,4 +188,6 @@ def apply_tool_call(agent: dict, name: str, arguments_json: str) -> str:
         return f"Error: wrong arguments for {name}: {error}."
     except operations.OperationError as error:
         return f"Error: {error}"
+    if json.dumps(agent, sort_keys=True) == before:
+        return NO_CHANGE
     return DONE
