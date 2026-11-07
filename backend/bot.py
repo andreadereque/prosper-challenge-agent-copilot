@@ -6,7 +6,9 @@
 # definition (JSON) via AgentBuilder and runs it. Swapping the agent is a data
 # change (edit/replace the JSON), not a code change.
 #
-#   example_flow.json  ->  AgentBuilder  ->  Pipecat Flows graph  ->  FlowManager
+#   agent.json  ->  AgentBuilder  ->  Pipecat Flows graph  ->  FlowManager
+#
+# The editor saves agent.json through api.py, which shares this server.
 #
 # Run:  python bot.py   then open http://localhost:7860/client
 #
@@ -34,15 +36,11 @@ from pipecat.transports.base_transport import BaseTransport, TransportParams
 from pipecat.workers.runner import WorkerRunner
 from pipecat_flows import FlowManager
 
+import agent_store
 from agent_builder import AgentBuilder
 
 # Load .env next to this file, so the bot runs the same from the repo root or backend/.
 load_dotenv(Path(__file__).parent / ".env", override=True)
-
-
-# The agent this bot runs. Point this at any agent JSON (the Phase 2 Composer
-# would generate one and drop it here).
-AGENT_FLOW = Path(__file__).parent / "example_flow.json"
 
 
 transport_params = {
@@ -112,11 +110,15 @@ async def run_bot(
 async def bot(runner_args: RunnerArguments):
     """Entry point invoked by the Pipecat dev runner (and Pipecat Cloud)."""
     transport = await create_transport(runner_args, transport_params)
-    builder = AgentBuilder.from_json(AGENT_FLOW)
+    # Read on every connection, so a saved agent is used by the next call.
+    builder = AgentBuilder.from_json(agent_store.agent_path())
     await run_bot(transport, runner_args, builder)
 
 
 if __name__ == "__main__":
-    from pipecat.runner.run import main
+    from pipecat.runner.run import app, main
 
+    from api import router
+
+    app.include_router(router)
     main()

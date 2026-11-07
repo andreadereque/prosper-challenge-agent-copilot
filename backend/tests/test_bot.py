@@ -8,6 +8,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
+import agent_store
 import bot
 from agent_builder import AgentBuilder
 
@@ -73,7 +74,7 @@ def runner_args():
 
 @pytest.fixture
 def builder():
-    return AgentBuilder.from_json(bot.AGENT_FLOW)
+    return AgentBuilder.from_json(agent_store.EXAMPLE_AGENT)
 
 
 async def test_services_use_the_agent_voice_and_model(fakes, runner_args, builder):
@@ -130,16 +131,14 @@ async def test_disconnecting_stops_the_worker(fakes, runner_args, builder):
     fakes.PipelineWorker.return_value.cancel.assert_awaited_once()
 
 
-async def test_each_connection_reads_the_latest_agent(monkeypatch, tmp_path, runner_args):
-    agent_path = tmp_path / "agent.json"
-    monkeypatch.setattr(bot, "AGENT_FLOW", agent_path)
+async def test_each_connection_reads_the_latest_agent(monkeypatch, agent_file, runner_args):
     monkeypatch.setattr(bot, "create_transport", AsyncMock(return_value=FakeTransport()))
     run_bot = AsyncMock()
     monkeypatch.setattr(bot, "run_bot", run_bot)
 
     for name in ["First version", "Second version"]:
         agent = {"name": name, "initial_node": "start", "nodes": [{"name": "start", "end": True}]}
-        agent_path.write_text(json.dumps(agent))
+        agent_file.write_text(json.dumps(agent))
         await bot.bot(runner_args)
 
     loaded_names = [call.args[2].config.name for call in run_bot.await_args_list]
