@@ -121,3 +121,15 @@ export function reportIssue(title: string, description: string, node: string | n
 export function setIssueStatus(id: string, status: Issue["status"]): Promise<Issue> {
   return request(`/api/issues/${id}`, jsonBody("PATCH", { status }));
 }
+
+export type SimulationResult = {
+  turns: CallTurn[];
+  path: string[];
+  ended_by: "agent" | "patient" | "turn_limit";
+  issues: Issue[];
+  passed: boolean;
+};
+
+export function simulateCall(agent: Agent, scenario: string): Promise<SimulationResult> {
+  return request("/api/simulate", jsonBody("POST", { agent, scenario }));
+}

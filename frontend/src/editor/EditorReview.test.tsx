@@ -53,6 +53,7 @@ describe("Editor fixing an issue", () => {
 
     expect(screen.getByText(/Issue: Emergency not escalated \(high\)/)).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Copilot proposal" })).toHaveTextContent("Added step emergency");
+    expect(screen.getByRole("button", { name: "Test with simulated patient" })).toBeInTheDocument();
   });
 
   it("marks the issue resolved when the fix is accepted", async () => {

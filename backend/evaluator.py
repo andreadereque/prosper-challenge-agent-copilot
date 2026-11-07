@@ -25,6 +25,10 @@ Report a problem when the agent:
 For each problem, choose the node whose instructions or transitions should change to \
 prevent it. That is usually where the agent first went wrong, not where the caller gave up.
 
+Read the whole call before judging. The agent's answer to a caller's turn is the turn \
+right after it; if that answer handles the problem (for example an emergency escalated as \
+soon as the caller describes it), it is not an issue.
+
 Only report problems you can quote from the transcript. A call that went well has no issues.
 
 Reply with JSON only, in this shape:

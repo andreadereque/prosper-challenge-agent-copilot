@@ -1,13 +1,18 @@
+import type { Agent } from "../types";
 import { describeChanges, type AgentDiff } from "./diffAgents";
+import { SimulationPanel } from "./SimulationPanel";
 
 type ProposalPanelProps = {
   diff: AgentDiff;
+  proposedAgent: Agent;
+  /** Set when the proposal fixes an issue, so it can be tested before accepting. */
+  scenario: string | null;
   errors: string[];
   onAccept: () => void;
   onReject: () => void;
 };
 
-export function ProposalPanel({ diff, errors, onAccept, onReject }: ProposalPanelProps) {
+export function ProposalPanel({ diff, proposedAgent, scenario, errors, onAccept, onReject }: ProposalPanelProps) {
   const changes = describeChanges(diff);
   return (
     <section className="panel" aria-label="Copilot proposal">
@@ -31,6 +36,7 @@ export function ProposalPanel({ diff, errors, onAccept, onReject }: ProposalPane
           </ul>
         </div>
       )}
+      {scenario && errors.length === 0 && <SimulationPanel agent={proposedAgent} scenario={scenario} />}
       <div className="proposal__actions">
         <button type="button" className="button button--primary" disabled={errors.length > 0} onClick={onAccept}>
           Accept and save

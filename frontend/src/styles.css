@@ -649,3 +649,36 @@ a.button {
   color: var(--muted);
   font-size: 12px;
 }
+
+.simulation {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px dashed var(--line);
+  border-radius: 6px;
+}
+
+.simulation__result {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.simulation__verdict {
+  margin: 0;
+  padding: 6px 10px;
+  border-radius: 5px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.simulation__verdict--passed {
+  background: #e3f4e8;
+  color: #1b5e33;
+}
+
+.simulation__verdict--failed {
+  background: #fbeceb;
+  color: #7a1c15;
+}
