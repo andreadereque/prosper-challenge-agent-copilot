@@ -3,7 +3,7 @@
 
 PROJECT := backend
 
-.PHONY: help install run clean
+.PHONY: help install run test clean
 
 help: ## Show available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -14,6 +14,9 @@ install: ## Create the venv and install dependencies (from uv.lock)
 
 run: ## Run the voice agent (then open http://localhost:7860/client)
 	uv run --directory $(PROJECT) python bot.py
+
+test: ## Run the backend tests with coverage (fails under 100%)
+	uv run --directory $(PROJECT) pytest --cov
 
 clean: ## Remove the venv and Python caches
 	rm -rf $(PROJECT)/.venv
