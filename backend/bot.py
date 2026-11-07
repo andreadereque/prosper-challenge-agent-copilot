@@ -38,6 +38,7 @@ from pipecat_flows import FlowManager
 
 import agent_store
 from agent_builder import AgentBuilder
+from call_recorder import CallRecorder
 
 # Load .env next to this file, so the bot runs the same from the repo root or backend/.
 load_dotenv(Path(__file__).parent / ".env", override=True)
@@ -92,6 +93,19 @@ async def run_bot(
         transport=transport,
     )
 
+    # Record every turn with the node it happened in, so the evaluator can
+    # point an issue at the node that caused it.
+    recorder = CallRecorder(config.name)
+    builder.on_transition = recorder.add_transition
+
+    @context_aggregator.user().event_handler("on_user_turn_stopped")
+    async def on_user_turn_stopped(aggregator, strategy, message):
+        recorder.add_turn("user", message.content, flow_manager.current_node)
+
+    @context_aggregator.assistant().event_handler("on_assistant_turn_stopped")
+    async def on_assistant_turn_stopped(aggregator, message):
+        recorder.add_turn("assistant", message.content, flow_manager.current_node)
+
     @transport.event_handler("on_client_connected")
     async def on_client_connected(transport, client):
         logger.info("Client connected — starting flow at initial node")
@@ -104,7 +118,11 @@ async def run_bot(
 
     runner = WorkerRunner(handle_sigint=runner_args.handle_sigint)
     await runner.add_workers(worker)
-    await runner.run()
+    try:
+        await runner.run()
+    finally:
+        # Saved however the call ends, including after an error.
+        recorder.save()
 
 
 async def bot(runner_args: RunnerArguments):

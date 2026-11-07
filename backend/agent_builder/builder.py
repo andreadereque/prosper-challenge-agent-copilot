@@ -11,7 +11,7 @@
 
 import json
 from pathlib import Path
-from typing import Union
+from typing import Callable, Optional, Union
 
 from loguru import logger
 from pipecat_flows import FlowManager, FlowsFunctionSchema, NodeConfig
@@ -34,6 +34,8 @@ class AgentBuilder:
     def __init__(self, config: AgentConfig):
         self.config = config
         self._nodes_by_name = {n.name: n for n in config.nodes}
+        # Optional listener for every transition, e.g. the call recorder.
+        self.on_transition: Optional[Callable[[str, str, dict], None]] = None
         self._validate()
 
     # ---- loading -----------------------------------------------------------
@@ -159,6 +161,8 @@ class AgentBuilder:
             # Persist what the caller gave us so later nodes can use it.
             flow_manager.state.update(args)
             logger.info(f"[{edge.function}] -> {edge.target} | collected: {args}")
+            if self.on_transition:
+                self.on_transition(edge.function, edge.target, args)
             next_node = self._make_node(self._nodes_by_name[edge.target])
             return {"status": "success", **args}, next_node
 

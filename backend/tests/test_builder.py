@@ -146,3 +146,14 @@ def test_an_explicit_end_conversation_is_not_repeated():
     node = AgentBuilder.from_dict(agent).build_initial_node()
 
     assert node["post_actions"] == [{"type": "end_conversation"}]
+
+
+async def test_a_transition_is_reported_to_a_listener():
+    builder = AgentBuilder.from_dict(make_agent())
+    seen = []
+    builder.on_transition = lambda tool, target, args: seen.append((tool, target, args))
+    [tool] = builder.build_initial_node()["functions"]
+
+    await tool.handler({"name": "Ana"}, SimpleNamespace(state={}))
+
+    assert seen == [("record_name", "done", {"name": "Ana"})]
