@@ -222,3 +222,41 @@ body {
   font-size: 13px;
   text-align: left;
 }
+
+.toolbar__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.toolbar__confirm {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: #fbe9d0;
+  font-size: 14px;
+}
+
+.panel__danger {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.button--danger {
+  border-color: #b3261e;
+  color: #b3261e;
+}
+
+.button:disabled {
+  border-color: var(--line);
+  color: var(--muted);
+  cursor: not-allowed;
+}

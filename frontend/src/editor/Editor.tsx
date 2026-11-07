@@ -1,9 +1,10 @@
 import { useState } from "react";
 
-import { moveNode } from "../agent/agentOps";
+import { addEdge, addNode, createBlankAgent, moveNode } from "../agent/agentOps";
 import { GraphCanvas } from "../graph/GraphCanvas";
 import type { Agent, Selection } from "../types";
 import { SidePanel } from "./SidePanel";
+import { Toolbar } from "./Toolbar";
 
 export function Editor({ initialAgent }: { initialAgent: Agent }) {
   const [agent, setAgent] = useState(initialAgent);
@@ -17,18 +18,38 @@ export function Editor({ initialAgent }: { initialAgent: Agent }) {
     setHasUnsavedChanges(true);
   }
 
+  function handleAddNode() {
+    const added = addNode(agent);
+    change(() => added.agent);
+    setSelection({ kind: "node", name: added.name });
+  }
+
+  function handleConnect(source: string, target: string) {
+    const added = addEdge(agent, source, target);
+    change(() => added.agent);
+    setSelection({ kind: "edge", node: source, tool: added.tool });
+  }
+
+  function handleNewAgent() {
+    change(() => createBlankAgent());
+    setSelection(null);
+  }
+
   return (
     <div className="app">
-      <header className="toolbar">
-        <h1 className="toolbar__title">{agent.name}</h1>
-        {hasUnsavedChanges && <span className="toolbar__status">Unsaved changes</span>}
-      </header>
+      <Toolbar
+        agentName={agent.name}
+        hasUnsavedChanges={hasUnsavedChanges}
+        onAddNode={handleAddNode}
+        onNewAgent={handleNewAgent}
+      />
       <div className="workspace">
         <GraphCanvas
           agent={agent}
           selection={selection}
           onSelect={setSelection}
           onMoveNode={(name, position) => change((current) => moveNode(current, name, position))}
+          onConnect={handleConnect}
         />
         <aside className="side-panel">
           <SidePanel agent={agent} selection={selection} onChange={change} onSelect={setSelection} />

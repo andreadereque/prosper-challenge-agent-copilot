@@ -7,7 +7,7 @@ import { GraphCanvas } from "./GraphCanvas";
 
 describe("GraphCanvas", () => {
   it("draws every node with its first instruction", () => {
-    render(<GraphCanvas agent={makeAgent()} selection={null} onSelect={vi.fn()} onMoveNode={vi.fn()} />);
+    render(<GraphCanvas agent={makeAgent()} selection={null} onSelect={vi.fn()} onMoveNode={vi.fn()} onConnect={vi.fn()} />);
 
     expect(screen.getByText("greeting")).toBeInTheDocument();
     expect(screen.getByText("Ask for the full name.")).toBeInTheDocument();
@@ -15,7 +15,7 @@ describe("GraphCanvas", () => {
   });
 
   it("marks the start and end nodes", () => {
-    render(<GraphCanvas agent={makeAgent()} selection={null} onSelect={vi.fn()} onMoveNode={vi.fn()} />);
+    render(<GraphCanvas agent={makeAgent()} selection={null} onSelect={vi.fn()} onMoveNode={vi.fn()} onConnect={vi.fn()} />);
 
     expect(screen.getByText("Start")).toBeInTheDocument();
     expect(screen.getByText("End")).toBeInTheDocument();

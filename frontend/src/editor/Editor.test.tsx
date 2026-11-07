@@ -93,6 +93,37 @@ describe("Editor", () => {
     expect(screen.getByText("Unsaved changes")).toBeInTheDocument();
   });
 
+  it("adds a node and opens it", async () => {
+    const { canvas } = renderEditor();
+
+    await user.click(screen.getByRole("button", { name: "Add node" }));
+
+    expect(within(canvas).getByText("new_step")).toBeInTheDocument();
+    expect(screen.getByLabelText("Name")).toHaveValue("new_step");
+  });
+
+  it("starts a new agent straight away when nothing is unsaved", async () => {
+    renderEditor();
+
+    await user.click(screen.getByRole("button", { name: "New agent" }));
+
+    expect(screen.getByRole("heading", { name: "New agent" })).toBeInTheDocument();
+  });
+
+  it("asks before discarding unsaved changes for a new agent", async () => {
+    renderEditor();
+    fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Front desk" } });
+
+    await user.click(screen.getByRole("button", { name: "New agent" }));
+    await user.click(screen.getByRole("button", { name: "Keep editing" }));
+    expect(screen.getByRole("heading", { name: "Front desk" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "New agent" }));
+    await user.click(screen.getByRole("button", { name: "Discard and start over" }));
+    expect(screen.getByRole("heading", { name: "New agent" })).toBeInTheDocument();
+    expect(screen.queryByRole("group", { name: "Discard changes" })).not.toBeInTheDocument();
+  });
+
   it("changes the agent's name from its settings", () => {
     renderEditor();
 

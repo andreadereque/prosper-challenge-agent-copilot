@@ -11,6 +11,7 @@ type EdgePanelProps = {
   siblingTools: string[];
   onUpdate: (changes: Partial<AgentEdge>) => void;
   onRenameTool: (tool: string) => void;
+  onDelete: () => void;
 };
 
 export function EdgePanel({
@@ -20,6 +21,7 @@ export function EdgePanel({
   siblingTools,
   onUpdate,
   onRenameTool,
+  onDelete,
 }: EdgePanelProps) {
   const rows = rowsFromEdge(edge);
   const fieldNames = rows.map((row) => row.name);
@@ -89,6 +91,11 @@ export function EdgePanel({
       <button type="button" className="button" onClick={addRow}>
         Add field
       </button>
+      <div className="panel__danger">
+        <button type="button" className="button button--danger" onClick={onDelete}>
+          Delete transition
+        </button>
+      </div>
     </section>
   );
 }

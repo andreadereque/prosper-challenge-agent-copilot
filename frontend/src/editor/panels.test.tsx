@@ -15,6 +15,7 @@ describe("NodePanel", () => {
     const onUpdate = vi.fn();
     const onRename = vi.fn();
     const onSelectEdge = vi.fn();
+    const onDelete = vi.fn();
     render(
       <NodePanel
         node={node}
@@ -22,9 +23,11 @@ describe("NodePanel", () => {
         onUpdate={onUpdate}
         onRename={onRename}
         onSelectEdge={onSelectEdge}
+        isInitial={node.name === "greeting"}
+        onDelete={onDelete}
       />,
     );
-    return { onUpdate, onRename, onSelectEdge };
+    return { onUpdate, onRename, onSelectEdge, onDelete };
   }
 
   it("edits the instructions", () => {
@@ -79,6 +82,22 @@ describe("NodePanel", () => {
     expect(onSelectEdge).toHaveBeenCalledWith("choose_intent");
   });
 
+  it("deletes a node that is not the start", async () => {
+    const { onDelete } = renderPanel({ name: "confirm", end: true });
+
+    await user.click(screen.getByRole("button", { name: "Delete node" }));
+
+    expect(onDelete).toHaveBeenCalled();
+    expect(screen.getByText("Transitions into this node are deleted too.")).toBeInTheDocument();
+  });
+
+  it("does not let you delete the start node", () => {
+    renderPanel();
+
+    expect(screen.getByRole("button", { name: "Delete node" })).toBeDisabled();
+    expect(screen.getByText(/Calls start here/)).toBeInTheDocument();
+  });
+
   it("says when a node has no transitions", () => {
     renderPanel({ name: "confirm", end: true });
 
@@ -125,6 +144,7 @@ describe("EdgePanel", () => {
   function renderPanel() {
     const onUpdate = vi.fn();
     const onRenameTool = vi.fn();
+    const onDelete = vi.fn();
     render(
       <EdgePanel
         edge={edge}
@@ -133,9 +153,10 @@ describe("EdgePanel", () => {
         siblingTools={["choose_intent", "transfer"]}
         onUpdate={onUpdate}
         onRenameTool={onRenameTool}
+        onDelete={onDelete}
       />,
     );
-    return { onUpdate, onRenameTool };
+    return { onUpdate, onRenameTool, onDelete };
   }
 
   it("shows where the transition starts and the data it collects", () => {
@@ -234,6 +255,7 @@ describe("EdgePanel", () => {
         siblingTools={[]}
         onUpdate={onUpdate}
         onRenameTool={vi.fn()}
+        onDelete={vi.fn()}
       />,
     );
 
@@ -243,6 +265,14 @@ describe("EdgePanel", () => {
       properties: { name: { type: "string" }, reason: { type: "string", description: "Why they call." } },
       required: ["name"],
     });
+  });
+
+  it("deletes the transition", async () => {
+    const { onDelete } = renderPanel();
+
+    await user.click(screen.getByRole("button", { name: "Delete transition" }));
+
+    expect(onDelete).toHaveBeenCalled();
   });
 
   it("removes a field", async () => {
