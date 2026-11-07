@@ -43,6 +43,16 @@ def add_client_issue(title: str, description: str, node: Optional[str]) -> dict:
     return issue
 
 
+def set_status(issue_id: str, status: str) -> Optional[dict]:
+    issues = load_issues()
+    for issue in issues:
+        if issue["id"] == issue_id:
+            issue["status"] = status
+            _save(issues)
+            return issue
+    return None
+
+
 def _new_issue(fields: dict) -> dict:
     return {"id": uuid.uuid4().hex[:8], "status": "open", **fields}
 

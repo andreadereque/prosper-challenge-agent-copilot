@@ -46,6 +46,9 @@ export function GraphCanvas({
   return (
     <div className="graph-canvas">
       <ReactFlow
+        // A new key when a proposal appears or goes remounts the canvas, so
+        // fitView frames the new steps instead of leaving them off screen.
+        key={String(Boolean(diff))}
         nodes={nodes}
         edges={edges}
         nodeTypes={nodeTypes}
