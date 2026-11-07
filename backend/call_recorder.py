@@ -13,6 +13,8 @@ from pathlib import Path
 from typing import Optional
 
 CALLS_DIR = Path(__file__).parent / "calls"
+# Made-up calls with known problems, committed so the demo works without real calls.
+MOCK_CALLS_DIR = Path(__file__).parent / "mock_calls"
 _CALL_ID = re.compile(r"^[A-Za-z0-9_-]+$")
 
 
@@ -48,22 +50,29 @@ class CallRecorder:
 
 
 def list_calls() -> list:
-    """Every recorded call, newest first, without the transcript."""
-    if not CALLS_DIR.exists():
-        return []
-    calls = [json.loads(path.read_text()) for path in CALLS_DIR.glob("*.json")]
+    """Every call, real and made-up, newest first, without the transcript."""
+    calls = [json.loads(path.read_text()) for path in _call_files()]
     calls.sort(key=lambda call: call["started_at"], reverse=True)
     return [_summary(call) for call in calls]
+
+
+def load_all_calls() -> list:
+    return [json.loads(path.read_text()) for path in _call_files()]
 
 
 def load_call(call_id: str) -> Optional[dict]:
     # Only plain ids, so a request can never read files outside the calls folder.
     if not _CALL_ID.match(call_id):
         return None
-    path = CALLS_DIR / f"{call_id}.json"
-    if not path.exists():
-        return None
-    return json.loads(path.read_text())
+    for directory in (CALLS_DIR, MOCK_CALLS_DIR):
+        path = directory / f"{call_id}.json"
+        if path.exists():
+            return json.loads(path.read_text())
+    return None
+
+
+def _call_files() -> list:
+    return [*CALLS_DIR.glob("*.json"), *MOCK_CALLS_DIR.glob("*.json")]
 
 
 def _summary(call: dict) -> dict:

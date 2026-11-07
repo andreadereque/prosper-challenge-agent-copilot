@@ -1,0 +1,73 @@
+{
+  "id": "mock-05-successful-booking",
+  "source": "mock",
+  "agent_name": "Prosper Scheduler",
+  "started_at": "2026-11-05T15:02:18",
+  "turns": [
+    {
+      "role": "assistant",
+      "text": "Hi, this is the clinic's scheduling assistant. Would you like to book, reschedule or cancel an appointment?",
+      "node": "greeting"
+    },
+    {
+      "role": "user",
+      "text": "I'd like to book an appointment.",
+      "node": "greeting"
+    },
+    {
+      "role": "assistant",
+      "text": "Great. What is your full name and the reason for the visit?",
+      "node": "collect_details"
+    },
+    {
+      "role": "user",
+      "text": "Sophie Turner, it's my annual check-up.",
+      "node": "collect_details"
+    },
+    {
+      "role": "assistant",
+      "text": "Thanks, Sophie. I can offer Tuesday at 10 AM or Thursday at 2 PM. Which works for you?",
+      "node": "offer_times"
+    },
+    {
+      "role": "user",
+      "text": "Thursday at 2 works.",
+      "node": "offer_times"
+    },
+    {
+      "role": "assistant",
+      "text": "You're booked for Thursday at 2 PM, Sophie, for your annual check-up. Thank you for calling, goodbye.",
+      "node": "confirm"
+    }
+  ],
+  "transitions": [
+    {
+      "tool": "choose_intent",
+      "target": "collect_details",
+      "args": {
+        "intent": "book"
+      }
+    },
+    {
+      "tool": "record_details",
+      "target": "offer_times",
+      "args": {
+        "full_name": "Sophie Turner",
+        "reason": "annual check-up"
+      }
+    },
+    {
+      "tool": "select_time",
+      "target": "confirm",
+      "args": {
+        "slot": "Thursday 2 PM"
+      }
+    }
+  ],
+  "collected": {
+    "intent": "book",
+    "full_name": "Sophie Turner",
+    "reason": "annual check-up",
+    "slot": "Thursday 2 PM"
+  }
+}

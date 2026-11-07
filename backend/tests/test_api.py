@@ -143,3 +143,52 @@ def test_an_unknown_call_is_a_404(client):
 
     assert response.status_code == 404
     assert response.json() == {"error": "No call with id '20991231-000000'."}
+
+
+# ---- Evaluation and issues -----------------------------------------------------
+
+import json as _json  # noqa: E402
+
+from tests.copilot.fake_openai import FakeOpenAI as _FakeOpenAI  # noqa: E402
+
+
+def test_evaluate_reviews_every_call_and_stores_the_issues(mock_calls):
+    found = {"node": "offer_times", "evidence": "Neither works", "title": "No slot fits", "severity": "high"}
+    # Every review reports it, but the quote is only in one call, so grounding
+    # keeps exactly one, whatever order the calls are reviewed in.
+    client = copilot_client(_FakeOpenAI(*[says(_json.dumps({"issues": [found]})) for _ in range(5)]))
+
+    response = client.post("/api/calls/evaluate")
+
+    assert response.status_code == 200
+    [issue] = response.json()
+    assert issue["title"] == "No slot fits"
+    assert client.get("/api/issues").json() == response.json()
+
+
+def test_evaluate_reports_a_failed_review(mock_calls):
+    client = copilot_client(_FakeOpenAI(*[says("not json") for _ in range(5)]))
+
+    response = client.post("/api/calls/evaluate")
+
+    assert response.status_code == 502
+    assert response.json()["error"].startswith("The evaluation failed")
+
+
+def test_a_client_can_report_an_issue(client):
+    response = client.post(
+        "/api/issues",
+        json={"title": "Wrong clinic name", "description": "The agent said the old name.", "node": "greeting"},
+    )
+
+    issue = response.json()
+    assert issue["source"] == "client"
+    assert issue["node"] == "greeting"
+    assert client.get("/api/issues").json() == [issue]
+
+
+def test_mock_calls_are_listed_with_real_ones(client, mock_calls):
+    ids = [call["id"] for call in client.get("/api/calls").json()]
+
+    assert ids[0] == "mock-05-successful-booking"
+    assert client.get("/api/calls/mock-03-emergency-ignored").status_code == 200
