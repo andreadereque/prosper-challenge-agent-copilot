@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 
 import { askCopilot, type ChatMessage, type CopilotResult } from "../api";
 import type { Agent } from "../types";
+import { SAMPLE_GUIDELINES } from "./sampleGuidelines";
 
 const SUGGESTIONS = [
   "If the caller describes a medical emergency, tell them to call 911 and end the call.",
@@ -34,7 +35,7 @@ export function CopilotPanel({ agent, isReviewing, onResult }: CopilotPanelProps
     try {
       // The Copilot sees the agent as it is on screen, including unsaved edits.
       const result = await askCopilot(history, agent);
-      setMessages([...history, { role: "assistant", content: result.reply }]);
+      setMessages([...history, { role: "assistant", content: replyText(result) }]);
       onResult(result);
     } catch (error) {
       setFailure((error as Error).message);
@@ -50,6 +51,9 @@ export function CopilotPanel({ agent, isReviewing, onResult }: CopilotPanelProps
         {messages.length === 0 && (
           <div className="copilot__empty">
             <p className="panel__hint">Describe a change and the Copilot proposes it on the graph for you to review.</p>
+            <button type="button" className="button suggestion" onClick={() => setDraft(SAMPLE_GUIDELINES)}>
+              Use sample client guidelines
+            </button>
             {SUGGESTIONS.map((suggestion) => (
               <button key={suggestion} type="button" className="button button--quiet suggestion" onClick={() => setDraft(suggestion)}>
                 {suggestion}
@@ -88,4 +92,14 @@ export function CopilotPanel({ agent, isReviewing, onResult }: CopilotPanelProps
       </form>
     </section>
   );
+}
+
+/** The reply as it is shown and kept in the history, questions included, so
+ * the Copilot sees what it asked when the user answers. */
+function replyText(result: CopilotResult): string {
+  if (result.questions.length === 0) {
+    return result.reply;
+  }
+  const questions = result.questions.map((question, index) => `${index + 1}. ${question}`);
+  return [result.reply || "Before I build it, I need to know:", ...questions].join("\n");
 }

@@ -40,6 +40,8 @@ export type CopilotResult = {
   proposed_agent: Agent;
   operations: { tool: string; arguments: Record<string, unknown> }[];
   errors: string[];
+  /** Asked before changing anything; the user answers in the chat. */
+  questions: string[];
 };
 
 export async function askCopilot(messages: ChatMessage[], agent: Agent): Promise<CopilotResult> {

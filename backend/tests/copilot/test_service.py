@@ -57,6 +57,7 @@ async def test_sends_the_agent_tools_and_chat_to_the_model(agent):
 
     [request] = client.requests
     assert request["model"] == service.MODEL
+    assert request["temperature"] == service.TEMPERATURE
     assert request["tools"] == TOOLS
     assert request["messages"][0] == {"role": "system", "content": build_system_prompt(agent)}
     assert request["messages"][1] == {"role": "user", "content": "Hello"}
@@ -146,3 +147,59 @@ def test_the_prompt_leaves_out_canvas_positions(agent):
 )
 def test_bad_tool_calls_become_messages_for_the_model(agent, name, arguments, expected):
     assert apply_tool_call(agent, name, arguments).startswith(expected)
+
+
+async def test_questions_end_the_turn_without_changing_the_agent(agent):
+    client = FakeOpenAI(
+        calls(
+            tool("set_agent_fields", name="Half done", call_id="call_1"),
+            tool(
+                "ask_clarifying_questions",
+                call_id="call_2",
+                questions=["Where should callers be transferred?", "Which slots can be offered?"],
+            ),
+        )
+    )
+
+    result = await service.run_copilot(client, ask("Build the agent from these guidelines."), agent)
+
+    assert result.questions == ["Where should callers be transferred?", "Which slots can be offered?"]
+    assert result.proposed_agent == agent
+    assert result.operations == []
+    assert len(client.requests) == 1
+
+
+async def test_an_empty_question_list_is_not_a_question(agent):
+    client = FakeOpenAI(
+        calls(tool("ask_clarifying_questions")),
+        says("Never mind."),
+    )
+
+    result = await service.run_copilot(client, ask("Hi"), agent)
+
+    assert result.questions == []
+    assert result.reply == "Never mind."
+
+
+def test_the_prompt_explains_how_to_build_from_guidelines(agent):
+    prompt = build_system_prompt(agent)
+
+    assert "client's guidelines" in prompt
+    assert "ask_clarifying_questions" in prompt
+
+
+async def test_after_each_step_the_model_sees_what_is_still_broken(agent):
+    client = FakeOpenAI(
+        calls(tool("add_node", name="orphan", instructions="Lost.", end=True)),
+        calls(tool("add_edge", from_node="greeting", tool="lost", description="Lost.", to_node="orphan")),
+        says("Added and connected."),
+    )
+
+    result = await service.run_copilot(client, ask("Add a step."), agent)
+
+    after_first_step = client.requests[1]["messages"][-1]["content"]
+    after_second_step = client.requests[2]["messages"][-1]["content"]
+    assert "still has these problems" in after_first_step
+    assert "- Node 'orphan' cannot be reached from the initial node." in after_first_step
+    assert after_second_step == "Done."
+    assert result.errors == []

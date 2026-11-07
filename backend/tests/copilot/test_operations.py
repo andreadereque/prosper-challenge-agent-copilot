@@ -194,3 +194,50 @@ def test_set_agent_fields_with_nothing_to_change(agent):
     operations.set_agent_fields(agent)
 
     assert agent["name"] == "Prosper Scheduler"
+
+
+def test_build_agent_replaces_the_whole_graph(agent):
+    operations.build_agent(
+        agent,
+        name="Northside",
+        persona="Be warm.",
+        initial_node="hello",
+        nodes=[
+            {
+                "name": "hello",
+                "instructions": "Greet the caller.",
+                "edges": [
+                    {"tool": "done", "description": "When finished.", "to_node": "bye", "fields": [{"name": "reason"}]}
+                ],
+            },
+            {"name": "bye", "instructions": "Say goodbye.", "end": True},
+        ],
+    )
+
+    assert agent == {
+        **agent,
+        "name": "Northside",
+        "persona": "Be warm.",
+        "initial_node": "hello",
+        "nodes": [
+            {
+                "name": "hello",
+                "task_messages": [{"role": "developer", "content": "Greet the caller."}],
+                "edges": [
+                    {
+                        "function": "done",
+                        "description": "When finished.",
+                        "target": "bye",
+                        "properties": {"reason": {"type": "string"}},
+                        "required": ["reason"],
+                    }
+                ],
+            },
+            {
+                "name": "bye",
+                "task_messages": [{"role": "developer", "content": "Say goodbye."}],
+                "end": True,
+                "edges": [],
+            },
+        ],
+    }

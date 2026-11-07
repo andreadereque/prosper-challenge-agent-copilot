@@ -117,6 +117,27 @@ def set_agent_fields(
         agent["initial_node"] = initial_node
 
 
+def build_agent(agent: dict, name: str, persona: str, initial_node: str, nodes: list) -> None:
+    """Replace the whole graph in one call. Used to build an agent from a client's
+    guidelines, where a step-by-step build is slow and easy to leave half-connected."""
+    built = []
+    for node in nodes:
+        new_node = {"name": node["name"], "task_messages": _instructions(node["instructions"])}
+        if node.get("end"):
+            new_node["end"] = True
+        new_node["edges"] = [
+            {
+                "function": edge["tool"],
+                "description": edge["description"],
+                "target": edge["to_node"],
+                **_schema_from_fields(edge.get("fields", [])),
+            }
+            for edge in node.get("edges", [])
+        ]
+        built.append(new_node)
+    agent.update(name=name, persona=persona, initial_node=initial_node, nodes=built)
+
+
 # ---- helpers -----------------------------------------------------------------
 
 

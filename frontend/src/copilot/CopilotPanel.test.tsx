@@ -4,10 +4,17 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { makeAgent } from "../test/fixtures";
 import { CopilotPanel } from "./CopilotPanel";
+import { SAMPLE_GUIDELINES } from "./sampleGuidelines";
 
 const user = userEvent.setup();
 
-const result = { reply: "I added an emergency step.", proposed_agent: makeAgent(), operations: [], errors: [] };
+const result = {
+  reply: "I added an emergency step.",
+  proposed_agent: makeAgent(),
+  operations: [],
+  errors: [],
+  questions: [],
+};
 
 function renderPanel(isReviewing = false) {
   const onResult = vi.fn();
@@ -46,6 +53,36 @@ describe("CopilotPanel", () => {
     expect(box).toHaveValue(
       "If the caller describes a medical emergency, tell them to call 911 and end the call.",
     );
+  });
+
+  it("fills in the sample client guidelines", async () => {
+    const { box } = renderPanel();
+
+    await user.click(screen.getByRole("button", { name: "Use sample client guidelines" }));
+
+    expect(box).toHaveValue(SAMPLE_GUIDELINES);
+  });
+
+  it.each([
+    ["with its own words", "A couple of things first:", "A couple of things first:"],
+    ["without words", "", "Before I build it, I need to know:"],
+  ])("shows the Copilot's questions %s and keeps them in the chat", async (_, reply, intro) => {
+    const answer = { ...result, reply, questions: ["Where do billing calls go?", "Which slots exist?"] };
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => answer });
+    vi.stubGlobal("fetch", fetchMock);
+    const { box } = renderPanel();
+
+    await user.type(box, "Build it.");
+    await user.click(screen.getByRole("button", { name: "Send" }));
+    await screen.findByText(/Where do billing calls go/);
+    await user.type(box, "Front desk.");
+    await user.click(screen.getByRole("button", { name: "Send" }));
+
+    const sent = JSON.parse(fetchMock.mock.calls[1][1].body).messages;
+    expect(sent[1]).toEqual({
+      role: "assistant",
+      content: `${intro}\n1. Where do billing calls go?\n2. Which slots exist?`,
+    });
   });
 
   it("keeps the message and explains when the Copilot fails", async () => {

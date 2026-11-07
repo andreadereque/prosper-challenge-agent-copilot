@@ -87,6 +87,7 @@ def test_copilot_returns_a_proposal_without_saving_it():
         "proposed_agent": agent,
         "operations": [],
         "errors": [],
+        "questions": [],
     }
 
 

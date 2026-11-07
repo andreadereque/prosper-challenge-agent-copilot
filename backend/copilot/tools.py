@@ -9,6 +9,9 @@ from . import operations
 # What the LLM sees when an operation worked.
 DONE = "Done."
 
+# Not an edit: the service stops and hands these questions to the user.
+ASK_QUESTIONS = "ask_clarifying_questions"
+
 _FIELDS = {
     "type": "array",
     "description": "Data the agent must collect before taking this edge.",
@@ -39,7 +42,41 @@ def _tool(name: str, description: str, properties: dict, required: list) -> dict
     }
 
 
+_EDGE = {
+    "type": "object",
+    "properties": {
+        "tool": _NAME,
+        "description": {"type": "string", "description": "When the voice agent should call it."},
+        "to_node": _NAME,
+        "fields": _FIELDS,
+    },
+    "required": ["tool", "description", "to_node"],
+}
+
+_NODE = {
+    "type": "object",
+    "properties": {
+        "name": _NAME,
+        "instructions": {"type": "string"},
+        "end": {"type": "boolean"},
+        "edges": {"type": "array", "items": _EDGE},
+    },
+    "required": ["name", "instructions"],
+}
+
 TOOLS = [
+    _tool(
+        "build_agent",
+        "Replace the whole agent at once. Use it only to build an agent from a client's "
+        "guidelines; use the smaller tools for changes.",
+        {
+            "name": {"type": "string"},
+            "persona": {"type": "string"},
+            "initial_node": _NAME,
+            "nodes": {"type": "array", "items": _NODE},
+        },
+        ["name", "persona", "initial_node", "nodes"],
+    ),
     _tool(
         "add_node",
         "Add a conversation step. Connect it with add_edge, or mark it end=true.",
@@ -100,6 +137,19 @@ TOOLS = [
         ["from_node", "tool"],
     ),
     _tool(
+        "ask_clarifying_questions",
+        "Ask the user before changing anything, only when a missing detail blocks building "
+        "the agent. Ends your turn; the user answers in the chat.",
+        {
+            "questions": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "One to four short, specific questions.",
+            }
+        },
+        ["questions"],
+    ),
+    _tool(
         "set_agent_fields",
         "Change the agent's name, persona (applies to every step) or initial step.",
         {"name": {"type": "string"}, "persona": {"type": "string"}, "initial_node": _NAME},
@@ -108,6 +158,7 @@ TOOLS = [
 ]
 
 _OPERATIONS = {
+    "build_agent": operations.build_agent,
     "add_node": operations.add_node,
     "edit_node": operations.edit_node,
     "delete_node": operations.delete_node,
