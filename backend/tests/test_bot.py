@@ -138,7 +138,7 @@ async def test_each_connection_reads_the_latest_agent(monkeypatch, tmp_path, run
     monkeypatch.setattr(bot, "run_bot", run_bot)
 
     for name in ["First version", "Second version"]:
-        agent = {"name": name, "initial_node": "start", "nodes": [{"name": "start"}]}
+        agent = {"name": name, "initial_node": "start", "nodes": [{"name": "start", "end": True}]}
         agent_path.write_text(json.dumps(agent))
         await bot.bot(runner_args)
 
