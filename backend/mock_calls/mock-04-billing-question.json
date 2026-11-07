@@ -1,0 +1,40 @@
+{
+  "id": "mock-04-billing-question",
+  "source": "mock",
+  "agent_name": "Prosper Scheduler",
+  "started_at": "2026-11-04T12:20:55",
+  "turns": [
+    {
+      "role": "assistant",
+      "text": "Hi, this is the clinic's scheduling assistant. Would you like to book, reschedule or cancel an appointment?",
+      "node": "greeting"
+    },
+    {
+      "role": "user",
+      "text": "None of those. I got a bill that looks wrong and I want to talk to someone.",
+      "node": "greeting"
+    },
+    {
+      "role": "assistant",
+      "text": "I can help you book, reschedule or cancel an appointment. Which would you like?",
+      "node": "greeting"
+    },
+    {
+      "role": "user",
+      "text": "I told you, it's about my bill. Can you transfer me to a person?",
+      "node": "greeting"
+    },
+    {
+      "role": "assistant",
+      "text": "I'm sorry, I can only help with booking, rescheduling or cancelling. Which would you like?",
+      "node": "greeting"
+    },
+    {
+      "role": "user",
+      "text": "This is useless.",
+      "node": "greeting"
+    }
+  ],
+  "transitions": [],
+  "collected": {}
+}

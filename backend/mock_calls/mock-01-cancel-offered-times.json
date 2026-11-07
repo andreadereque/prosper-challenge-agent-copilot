@@ -1,0 +1,70 @@
+{
+  "id": "mock-01-cancel-offered-times",
+  "source": "mock",
+  "agent_name": "Prosper Scheduler",
+  "started_at": "2026-11-03T09:12:40",
+  "turns": [
+    {
+      "role": "assistant",
+      "text": "Hi, this is the clinic's scheduling assistant. Would you like to book, reschedule or cancel an appointment?",
+      "node": "greeting"
+    },
+    {
+      "role": "user",
+      "text": "I need to cancel my appointment for Friday.",
+      "node": "greeting"
+    },
+    {
+      "role": "assistant",
+      "text": "Of course. Can I have your full name and the reason for the visit?",
+      "node": "collect_details"
+    },
+    {
+      "role": "user",
+      "text": "Maria Lopez. It was a check-up, but I just want to cancel it.",
+      "node": "collect_details"
+    },
+    {
+      "role": "assistant",
+      "text": "Thanks, Maria. I can offer Tuesday at 10 AM or Thursday at 2 PM. Which works for you?",
+      "node": "offer_times"
+    },
+    {
+      "role": "user",
+      "text": "No, I don't want a new time. I want to cancel.",
+      "node": "offer_times"
+    },
+    {
+      "role": "assistant",
+      "text": "I understand. The options I have are Tuesday at 10 AM or Thursday at 2 PM.",
+      "node": "offer_times"
+    },
+    {
+      "role": "user",
+      "text": "Forget it, I'll call the front desk.",
+      "node": "offer_times"
+    }
+  ],
+  "transitions": [
+    {
+      "tool": "choose_intent",
+      "target": "collect_details",
+      "args": {
+        "intent": "cancel"
+      }
+    },
+    {
+      "tool": "record_details",
+      "target": "offer_times",
+      "args": {
+        "full_name": "Maria Lopez",
+        "reason": "check-up"
+      }
+    }
+  ],
+  "collected": {
+    "intent": "cancel",
+    "full_name": "Maria Lopez",
+    "reason": "check-up"
+  }
+}
