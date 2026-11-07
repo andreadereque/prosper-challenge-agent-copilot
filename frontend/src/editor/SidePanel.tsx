@@ -1,4 +1,6 @@
 import {
+  deleteEdge,
+  deleteNode,
   findNode,
   renameNode,
   updateAgentFields,
@@ -34,6 +36,11 @@ export function SidePanel({ agent, selection, onChange, onSelect }: SidePanelPro
             onSelect({ kind: "node", name });
           }}
           onSelectEdge={(tool) => onSelect({ kind: "edge", node: node.name, tool })}
+          isInitial={node.name === agent.initial_node}
+          onDelete={() => {
+            onChange((current) => deleteNode(current, node.name));
+            onSelect(null);
+          }}
         />
       );
     }
@@ -57,6 +64,10 @@ export function SidePanel({ agent, selection, onChange, onSelect }: SidePanelPro
           onRenameTool={(tool) => {
             onChange((current) => updateEdge(current, source, edge.function, { function: tool }));
             onSelect({ kind: "edge", node: source, tool });
+          }}
+          onDelete={() => {
+            onChange((current) => deleteEdge(current, source, edge.function));
+            onSelect({ kind: "node", name: source });
           }}
         />
       );

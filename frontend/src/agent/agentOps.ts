@@ -103,3 +103,52 @@ export function uniqueName(base: string, taken: string[]): string {
   }
   return name;
 }
+
+export function addNode(agent: Agent): { agent: Agent; name: string } {
+  const name = uniqueName("new_step", agent.nodes.map((node) => node.name));
+  return { agent: { ...agent, nodes: [...agent.nodes, { name, task_messages: [] }] }, name };
+}
+
+/** Removes a node and every transition into it. The caller keeps the initial node. */
+export function deleteNode(agent: Agent, name: string): Agent {
+  const nodes = agent.nodes
+    .filter((node) => node.name !== name)
+    .map((node) => {
+      if (!node.edges) {
+        return node;
+      }
+      return { ...node, edges: node.edges.filter((edge) => edge.target !== name) };
+    });
+  return { ...agent, nodes };
+}
+
+export function addEdge(agent: Agent, source: string, target: string): { agent: Agent; tool: string } {
+  const siblings = findNode(agent, source)?.edges ?? [];
+  const tool = uniqueName(`go_to_${target}`, siblings.map((edge) => edge.function));
+  const edge: AgentEdge = { function: tool, description: `Move on to ${target}.`, target };
+  return { agent: updateNode(agent, source, { edges: [...siblings, edge] }), tool };
+}
+
+export function deleteEdge(agent: Agent, nodeName: string, tool: string): Agent {
+  const siblings = findNode(agent, nodeName)?.edges ?? [];
+  return updateNode(agent, nodeName, { edges: siblings.filter((edge) => edge.function !== tool) });
+}
+
+/** The smallest agent that can take a call: one step that greets and hangs up. */
+export function createBlankAgent(): Agent {
+  return {
+    name: "New agent",
+    persona:
+      "You are a warm, efficient assistant for a healthcare clinic. Your replies are spoken " +
+      "aloud, so avoid lists, emojis or anything that cannot be read out. Keep replies to one " +
+      "or two short sentences.",
+    initial_node: "greeting",
+    nodes: [
+      {
+        name: "greeting",
+        task_messages: [{ role: "developer", content: "Greet the caller and ask how you can help." }],
+        end: true,
+      },
+    ],
+  };
+}

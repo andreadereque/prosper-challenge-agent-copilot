@@ -8,9 +8,19 @@ type NodePanelProps = {
   onUpdate: (changes: Partial<AgentNode>) => void;
   onRename: (name: string) => void;
   onSelectEdge: (tool: string) => void;
+  isInitial: boolean;
+  onDelete: () => void;
 };
 
-export function NodePanel({ node, nodeNames, onUpdate, onRename, onSelectEdge }: NodePanelProps) {
+export function NodePanel({
+  node,
+  nodeNames,
+  onUpdate,
+  onRename,
+  onSelectEdge,
+  isInitial,
+  onDelete,
+}: NodePanelProps) {
   const messages = node.task_messages ?? [];
   // Always show at least one box, so a new node can get its first instruction.
   const boxCount = Math.max(1, messages.length);
@@ -73,6 +83,15 @@ export function NodePanel({ node, nodeNames, onUpdate, onRename, onSelectEdge }:
           {edge.function} → {edge.target}
         </button>
       ))}
+      <div className="panel__danger">
+        <button type="button" className="button button--danger" disabled={isInitial} onClick={onDelete}>
+          Delete node
+        </button>
+        {isInitial && (
+          <p className="panel__hint">Calls start here. Choose another start node in the agent settings first.</p>
+        )}
+        {!isInitial && <p className="panel__hint">Transitions into this node are deleted too.</p>}
+      </div>
     </section>
   );
 }

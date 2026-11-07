@@ -2,6 +2,11 @@ import { describe, expect, it } from "vitest";
 
 import { makeAgent } from "../test/fixtures";
 import {
+  addEdge,
+  addNode,
+  createBlankAgent,
+  deleteEdge,
+  deleteNode,
   findEdge,
   moveNode,
   renameNode,
@@ -100,5 +105,61 @@ describe("uniqueName", () => {
 
   it("adds the first free number", () => {
     expect(uniqueName("field", ["field", "field_2"])).toBe("field_3");
+  });
+});
+
+describe("adding and deleting", () => {
+  it("adds an empty node with a free name", () => {
+    const first = addNode(makeAgent());
+    const second = addNode(first.agent);
+
+    expect(first.name).toBe("new_step");
+    expect(second.name).toBe("new_step_2");
+    expect(second.agent.nodes.at(-1)).toEqual({ name: "new_step_2", task_messages: [] });
+  });
+
+  it("deletes a node and every transition into it", () => {
+    const agent = deleteNode(makeAgent(), "confirm");
+
+    expect(agent.nodes.map((node) => node.name)).toEqual(["greeting", "collect_details"]);
+    expect(agent.nodes[1].edges).toEqual([]);
+  });
+
+  it("connects two nodes with a tool named after the target", () => {
+    const first = addEdge(makeAgent(), "confirm", "greeting");
+    const second = addEdge(first.agent, "confirm", "greeting");
+
+    expect(first.tool).toBe("go_to_greeting");
+    expect(second.tool).toBe("go_to_greeting_2");
+    expect(findEdge(first.agent, "confirm", "go_to_greeting")).toEqual({
+      function: "go_to_greeting",
+      description: "Move on to greeting.",
+      target: "greeting",
+    });
+  });
+
+  it("deletes one transition", () => {
+    const agent = deleteEdge(makeAgent(), "greeting", "choose_intent");
+
+    expect(agent.nodes[0].edges).toEqual([]);
+  });
+
+  it("does nothing when deleting a transition of a node that does not exist", () => {
+    const agent = makeAgent();
+
+    expect(deleteEdge(agent, "missing", "choose_intent").nodes).toEqual(agent.nodes);
+  });
+
+  it("creates a blank agent that starts and ends at its greeting", () => {
+    const agent = createBlankAgent();
+
+    expect(agent.initial_node).toBe("greeting");
+    expect(agent.nodes).toEqual([
+      {
+        name: "greeting",
+        task_messages: [{ role: "developer", content: "Greet the caller and ask how you can help." }],
+        end: true,
+      },
+    ]);
   });
 });

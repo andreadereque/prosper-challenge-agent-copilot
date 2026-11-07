@@ -14,9 +14,10 @@ type GraphCanvasProps = {
   selection: Selection;
   onSelect: (selection: Selection) => void;
   onMoveNode: (name: string, position: Position) => void;
+  onConnect: (source: string, target: string) => void;
 };
 
-export function GraphCanvas({ agent, selection, onSelect, onMoveNode }: GraphCanvasProps) {
+export function GraphCanvas({ agent, selection, onSelect, onMoveNode, onConnect }: GraphCanvasProps) {
   const { nodes, edges } = useMemo(() => agentToFlow(agent, selection), [agent, selection]);
 
   // The canvas never keeps its own copy of the nodes: a drag is turned into a
@@ -40,6 +41,9 @@ export function GraphCanvas({ agent, selection, onSelect, onMoveNode }: GraphCan
         // Each edge is labelled with its tool name, which is unique within its node.
         onEdgeClick={(_, edge) => onSelect({ kind: "edge", node: edge.source, tool: String(edge.label) })}
         onPaneClick={() => onSelect(null)}
+        onConnect={(connection) => onConnect(connection.source, connection.target)}
+        // Deleting is done from the side panel, where it is explicit and can be explained.
+        deleteKeyCode={null}
         fitView
       >
         <Background />

@@ -18,18 +18,20 @@ type FakeProps = {
   onNodeClick: (event: unknown, node: { id: string }) => void;
   onEdgeClick: (event: unknown, edge: { source: string; label: string }) => void;
   onPaneClick: () => void;
+  onConnect: (connection: { source: string; target: string }) => void;
 };
 
 vi.mock("@xyflow/react", () => ({
   Background: () => null,
   Controls: () => null,
-  ReactFlow: ({ children, onNodesChange, onNodeClick, onEdgeClick, onPaneClick }: FakeProps) => (
+  ReactFlow: ({ children, onNodesChange, onNodeClick, onEdgeClick, onPaneClick, onConnect }: FakeProps) => (
     <div>
       <button onClick={() => onNodeClick({}, { id: "confirm" })}>click node</button>
       <button onClick={() => onEdgeClick({}, { source: "greeting", label: "choose_intent" })}>
         click edge
       </button>
       <button onClick={() => onPaneClick()}>click pane</button>
+      <button onClick={() => onConnect({ source: "confirm", target: "greeting" })}>connect</button>
       <button
         onClick={() =>
           onNodesChange([
@@ -49,8 +51,17 @@ vi.mock("@xyflow/react", () => ({
 function renderCanvas() {
   const onSelect = vi.fn();
   const onMoveNode = vi.fn();
-  render(<GraphCanvas agent={makeAgent()} selection={null} onSelect={onSelect} onMoveNode={onMoveNode} />);
-  return { onSelect, onMoveNode };
+  const onConnect = vi.fn();
+  render(
+    <GraphCanvas
+      agent={makeAgent()}
+      selection={null}
+      onSelect={onSelect}
+      onMoveNode={onMoveNode}
+      onConnect={onConnect}
+    />,
+  );
+  return { onSelect, onMoveNode, onConnect };
 }
 
 describe("GraphCanvas events", () => {
@@ -76,6 +87,14 @@ describe("GraphCanvas events", () => {
     await user.click(screen.getByText("click pane"));
 
     expect(onSelect).toHaveBeenCalledWith(null);
+  });
+
+  it("connects two nodes", async () => {
+    const { onConnect } = renderCanvas();
+
+    await user.click(screen.getByText("connect"));
+
+    expect(onConnect).toHaveBeenCalledWith("confirm", "greeting");
   });
 
   it("turns only real moves into node moves", async () => {
