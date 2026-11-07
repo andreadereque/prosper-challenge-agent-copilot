@@ -48,6 +48,20 @@ class FakeTransport:
         return register
 
 
+class FakeAggregator:
+    """Records the turn handlers bot.py registers on a context aggregator."""
+
+    def __init__(self):
+        self.handlers = {}
+
+    def event_handler(self, event_name):
+        def register(handler):
+            self.handlers[event_name] = handler
+            return handler
+
+        return register
+
+
 @pytest.fixture
 def fakes(monkeypatch):
     monkeypatch.setenv("ELEVENLABS_API_KEY", "test-elevenlabs-key")
@@ -57,6 +71,9 @@ def fakes(monkeypatch):
         created[name] = MagicMock(name=name)
         monkeypatch.setattr(bot, name, created[name])
 
+    aggregators = created["LLMContextAggregatorPair"].return_value
+    aggregators.user.return_value = FakeAggregator()
+    aggregators.assistant.return_value = FakeAggregator()
     worker = created["PipelineWorker"].return_value
     worker.cancel = AsyncMock()
     flow_manager = created["FlowManager"].return_value
@@ -143,3 +160,48 @@ async def test_each_connection_reads_the_latest_agent(monkeypatch, agent_file, r
 
     loaded_names = [call.args[2].config.name for call in run_bot.await_args_list]
     assert loaded_names == ["First version", "Second version"]
+
+
+async def test_the_call_is_recorded_turn_by_turn(fakes, runner_args, builder, calls_dir):
+    flow_manager = fakes.FlowManager.return_value
+    aggregators = fakes.LLMContextAggregatorPair.return_value
+
+    async def a_short_call():
+        flow_manager.current_node = "greeting"
+        await aggregators.assistant.return_value.handlers["on_assistant_turn_stopped"](
+            None, SimpleNamespace(content="Hello, how can I help?")
+        )
+        await aggregators.user.return_value.handlers["on_user_turn_stopped"](
+            None, None, SimpleNamespace(content="I want to book.")
+        )
+        builder.on_transition("choose_intent", "collect_details", {"intent": "book"})
+
+    fakes.WorkerRunner.return_value.run = AsyncMock(side_effect=a_short_call)
+
+    await bot.run_bot(FakeTransport(), runner_args, builder)
+
+    [saved] = calls_dir.glob("*.json")
+    call = json.loads(saved.read_text())
+    assert call["turns"] == [
+        {"role": "assistant", "text": "Hello, how can I help?", "node": "greeting"},
+        {"role": "user", "text": "I want to book.", "node": "greeting"},
+    ]
+    assert call["collected"] == {"intent": "book"}
+
+
+async def test_the_call_is_saved_even_when_it_fails(fakes, runner_args, builder, calls_dir):
+    aggregators = fakes.LLMContextAggregatorPair.return_value
+    fakes.FlowManager.return_value.current_node = "greeting"
+
+    async def a_failing_call():
+        await aggregators.user.return_value.handlers["on_user_turn_stopped"](
+            None, None, SimpleNamespace(content="Hello?")
+        )
+        raise RuntimeError("connection lost")
+
+    fakes.WorkerRunner.return_value.run = AsyncMock(side_effect=a_failing_call)
+
+    with pytest.raises(RuntimeError):
+        await bot.run_bot(FakeTransport(), runner_args, builder)
+
+    assert len(list(calls_dir.glob("*.json"))) == 1

@@ -14,6 +14,7 @@ from openai import AsyncOpenAI, OpenAIError
 from pydantic import BaseModel
 
 import agent_store
+import call_recorder
 from agent_builder import AgentValidationError
 from copilot.service import run_copilot
 
@@ -32,6 +33,19 @@ def put_agent(agent: dict):
     except AgentValidationError as error:
         return JSONResponse(status_code=422, content={"errors": error.errors})
     return agent
+
+
+@router.get("/calls")
+def get_calls() -> list:
+    return call_recorder.list_calls()
+
+
+@router.get("/calls/{call_id}")
+def get_call(call_id: str):
+    call = call_recorder.load_call(call_id)
+    if call is None:
+        return JSONResponse(status_code=404, content={"error": f"No call with id '{call_id}'."})
+    return call
 
 
 class ChatMessage(BaseModel):

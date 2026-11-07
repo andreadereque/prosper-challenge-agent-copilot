@@ -121,3 +121,25 @@ def test_the_default_client_reads_the_key_from_the_environment(monkeypatch):
     monkeypatch.setenv("OPENAI_API_KEY", "test-openai-key")
 
     assert get_openai_client().api_key == "test-openai-key"
+
+
+# ---- Calls ---------------------------------------------------------------------
+
+from call_recorder import CallRecorder  # noqa: E402
+
+
+def test_lists_and_reads_recorded_calls(client):
+    recorder = CallRecorder("Clinic")
+    recorder.add_turn("user", "Hi", "greeting")
+    recorder.save()
+    call_id = recorder.call["id"]
+
+    assert client.get("/api/calls").json()[0]["id"] == call_id
+    assert client.get(f"/api/calls/{call_id}").json()["turns"][0]["text"] == "Hi"
+
+
+def test_an_unknown_call_is_a_404(client):
+    response = client.get("/api/calls/20991231-000000")
+
+    assert response.status_code == 404
+    assert response.json() == {"error": "No call with id '20991231-000000'."}
