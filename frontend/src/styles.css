@@ -1,0 +1,86 @@
+:root {
+  --ground: #f5f7f9;
+  --surface: #ffffff;
+  --ink: #16242e;
+  --muted: #56687a;
+  --line: #cbd6de;
+  --accent: #0b7285;
+  --accent-soft: #d6eef2;
+  font-family: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  color: var(--ink);
+  background: var(--ground);
+}
+
+body {
+  margin: 0;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 20px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+}
+
+.toolbar__title {
+  margin: 0;
+  font-size: 18px;
+}
+
+.page-message {
+  padding: 32px;
+  color: var(--muted);
+}
+
+.graph-canvas {
+  flex: 1;
+  min-height: 0;
+}
+
+.agent-node {
+  width: 220px;
+  padding: 10px 12px;
+  background: var(--surface);
+  border: 1px solid var(--ink);
+  border-radius: 6px;
+}
+
+.agent-node__badges {
+  display: flex;
+  gap: 6px;
+  min-height: 4px;
+}
+
+.badge {
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.agent-node__name {
+  display: block;
+  margin-top: 4px;
+  font-family: "JetBrains Mono", Menlo, monospace;
+  font-size: 13px;
+}
+
+.agent-node__summary {
+  display: -webkit-box;
+  margin: 4px 0 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 12px;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
