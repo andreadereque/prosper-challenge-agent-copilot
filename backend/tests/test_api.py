@@ -217,3 +217,53 @@ def test_an_issue_status_must_be_known(client):
     issue = client.post("/api/issues", json={"title": "T", "description": "D"}).json()
 
     assert client.patch(f"/api/issues/{issue['id']}", json={"status": "done"}).status_code == 422
+
+
+# ---- Simulation ----------------------------------------------------------------
+
+
+def test_simulate_plays_the_call_and_reviews_it():
+    agent = agent_store.load_agent()
+    client = copilot_client(
+        _FakeOpenAI(says("Hello."), says("Bye [END]"), says(_json.dumps({"issues": []})))
+    )
+
+    response = client.post("/api/simulate", json={"agent": agent, "scenario": "Say hello."})
+
+    body = response.json()
+    assert response.status_code == 200
+    assert body["passed"] is True
+    assert body["issues"] == []
+    assert body["ended_by"] == "patient"
+
+
+def test_simulate_fails_when_the_review_finds_an_issue():
+    agent = agent_store.load_agent()
+    found = {"node": "greeting", "evidence": "Hello.", "title": "Rude", "severity": "low"}
+    client = copilot_client(
+        _FakeOpenAI(says("Hello."), says("Bye [END]"), says(_json.dumps({"issues": [found]})))
+    )
+
+    body = client.post("/api/simulate", json={"agent": agent, "scenario": "Say hello."}).json()
+
+    assert body["passed"] is False
+    assert body["issues"][0]["title"] == "Rude"
+
+
+def test_simulate_refuses_an_invalid_agent():
+    client = copilot_client(_FakeOpenAI())
+    agent = agent_store.load_agent()
+    agent["initial_node"] = "missing"
+
+    response = client.post("/api/simulate", json={"agent": agent, "scenario": "Anything."})
+
+    assert response.status_code == 422
+
+
+def test_simulate_reports_a_failed_review():
+    agent = agent_store.load_agent()
+    client = copilot_client(_FakeOpenAI(says("Hello."), says("Bye [END]"), says("not json")))
+
+    response = client.post("/api/simulate", json={"agent": agent, "scenario": "Say hello."})
+
+    assert response.status_code == 502

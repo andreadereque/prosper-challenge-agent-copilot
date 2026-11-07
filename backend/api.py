@@ -18,6 +18,7 @@ import agent_store
 import call_recorder
 import evaluator
 import issues_store
+import simulator
 from agent_builder import AgentValidationError
 from copilot.service import run_copilot
 
@@ -116,3 +117,22 @@ def update_issue(issue_id: str, update: IssueStatus):
     if issue is None:
         return JSONResponse(status_code=404, content={"error": f"No issue with id '{issue_id}'."})
     return issue
+
+
+class SimulationRequest(BaseModel):
+    agent: dict
+    scenario: str
+
+
+@router.post("/simulate")
+async def simulate_call(request: SimulationRequest, client=Depends(get_openai_client)):
+    """Plays the scenario against the agent, then reviews the call with the
+    evaluator. The test passes when the evaluator finds nothing."""
+    try:
+        call = await simulator.simulate(client, request.agent, request.scenario)
+        issues = await evaluator.evaluate_call(client, call, request.agent)
+    except AgentValidationError as error:
+        return JSONResponse(status_code=422, content={"errors": error.errors})
+    except (OpenAIError, evaluator.EvaluationError) as error:
+        return JSONResponse(status_code=502, content={"error": f"The simulation failed: {error}"})
+    return {**call, "issues": issues, "passed": not issues}

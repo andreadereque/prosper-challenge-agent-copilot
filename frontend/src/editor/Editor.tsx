@@ -11,6 +11,7 @@ import {
 } from "../api";
 import { buildFixRequest } from "../copilot/fixRequest";
 import { CopilotPanel } from "../copilot/CopilotPanel";
+import { buildScenario } from "../copilot/scenario";
 import { useCopilotChat } from "../copilot/useCopilotChat";
 import { diffAgents, hasChanges, mergeForDiff, type AgentDiff } from "../diff/diffAgents";
 import { ProposalPanel } from "../diff/ProposalPanel";
@@ -30,8 +31,9 @@ export function Editor({ initialAgent }: { initialAgent: Agent }) {
   const [saveFailure, setSaveFailure] = useState("");
   const [proposal, setProposal] = useState<CopilotResult | null>(null);
   const [view, setView] = useState<View>("graph");
-  // The issue the current Copilot request is fixing, so accepting resolves it.
-  const [fixingIssueId, setFixingIssueId] = useState<string | null>(null);
+  // The issue the current Copilot request is fixing: accepting resolves it, and
+  // its caller can be replayed by the simulated patient.
+  const [fixingIssue, setFixingIssue] = useState<{ issue: Issue; call: Call | null } | null>(null);
   const chat = useCopilotChat(agent, handleCopilotResult);
 
   // Updates receive the latest agent, so several changes in one event
@@ -88,7 +90,7 @@ export function Editor({ initialAgent }: { initialAgent: Agent }) {
       setSelection(null);
       return;
     }
-    setFixingIssueId(null);
+    setFixingIssue(null);
   }
 
   // Accepting uses the same save as a manual edit, with the same validation.
@@ -97,20 +99,20 @@ export function Editor({ initialAgent }: { initialAgent: Agent }) {
     setProposal(null);
     setHasUnsavedChanges(true);
     await save(accepted);
-    if (fixingIssueId) {
-      setFixingIssueId(null);
-      await setIssueStatus(fixingIssueId, "resolved").catch(() => {});
+    if (fixingIssue) {
+      setFixingIssue(null);
+      await setIssueStatus(fixingIssue.issue.id, "resolved").catch(() => {});
     }
   }
 
   function rejectProposal() {
     setProposal(null);
-    setFixingIssueId(null);
+    setFixingIssue(null);
   }
 
   function handleFix(issue: Issue, call: Call | null) {
     setView("graph");
-    setFixingIssueId(issue.id);
+    setFixingIssue({ issue, call });
     chat.send(buildFixRequest(issue, call));
   }
 
@@ -164,6 +166,8 @@ export function Editor({ initialAgent }: { initialAgent: Agent }) {
               {proposal && (
                 <ProposalPanel
                   diff={diff as AgentDiff}
+                  proposedAgent={proposal.proposed_agent}
+                  scenario={fixingIssue && buildScenario(fixingIssue.issue, fixingIssue.call)}
                   errors={proposal.errors}
                   onAccept={() => acceptProposal(proposal.proposed_agent)}
                   onReject={rejectProposal}

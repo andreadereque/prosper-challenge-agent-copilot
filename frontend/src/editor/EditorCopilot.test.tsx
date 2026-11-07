@@ -49,6 +49,8 @@ describe("Editor with the Copilot", () => {
     expect(screen.getByRole("region", { name: "Copilot proposal" })).toHaveTextContent("Added step emergency");
     expect(screen.getByRole("button", { name: "Add node" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Send" })).toBeDisabled();
+    // Only fixes for an issue have a caller to replay.
+    expect(screen.queryByRole("button", { name: "Test with simulated patient" })).not.toBeInTheDocument();
   });
 
   it("rejecting leaves the agent as it was", async () => {
