@@ -16,10 +16,10 @@ function withEmergencyStep(): Agent {
 }
 
 /** Answers the Copilot with `proposed` and accepts any save. */
-function serve(proposed: Agent, errors: string[] = []) {
+function serve(proposed: Agent, errors: string[] = [], questions: string[] = []) {
   const fetchMock = vi.fn(async (url: string) => {
     if (url === "/api/copilot") {
-      return { ok: true, status: 200, json: async () => ({ reply: "Done.", proposed_agent: proposed, operations: [], errors }) };
+      return { ok: true, status: 200, json: async () => ({ reply: "Done.", proposed_agent: proposed, operations: [], errors, questions }) };
     }
     return { ok: true, status: 200, json: async () => ({}) };
   });
@@ -31,7 +31,7 @@ async function askCopilot() {
   const view = render(<Editor initialAgent={makeAgent()} />);
   await user.type(screen.getByLabelText("Message for the Copilot"), "Add an emergency step.");
   await user.click(screen.getByRole("button", { name: "Send" }));
-  await screen.findByText("Done.");
+  await screen.findByText(/^Done\./);
   return view.container.querySelector(".graph-canvas") as HTMLElement;
 }
 
@@ -93,6 +93,14 @@ describe("Editor with the Copilot", () => {
 
     expect(screen.queryByRole("region", { name: "Copilot proposal" })).not.toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Edit agent" })).toBeInTheDocument();
+  });
+
+  it("shows no proposal while the Copilot is asking questions", async () => {
+    serve(withEmergencyStep(), [], ["Where should billing calls go?"]);
+
+    await askCopilot();
+
+    expect(screen.queryByRole("region", { name: "Copilot proposal" })).not.toBeInTheDocument();
   });
 
   it("marks edited and removed steps", async () => {

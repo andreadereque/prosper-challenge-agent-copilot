@@ -65,6 +65,10 @@ export function Editor({ initialAgent }: { initialAgent: Agent }) {
   }
 
   function handleCopilotResult(result: CopilotResult) {
+    // Questions come before any change: there is nothing to review yet.
+    if (result.questions.length > 0) {
+      return;
+    }
     if (hasChanges(diffAgents(agent, result.proposed_agent))) {
       setProposal(result);
       setSelection(null);

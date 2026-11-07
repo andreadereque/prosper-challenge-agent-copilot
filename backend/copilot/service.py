@@ -11,12 +11,14 @@ from dataclasses import dataclass, field
 from agent_builder import AgentBuilder, AgentValidationError
 
 from .prompts import build_system_prompt
-from .tools import DONE, TOOLS, apply_tool_call
+from .tools import ASK_QUESTIONS, DONE, TOOLS, apply_tool_call
 
 # One place to try another model; see DEVLOG.md for why this one.
 MODEL = "gpt-4o"
+# Low, so the same request gives a similar proposal each time.
+TEMPERATURE = 0.2
 # Caps cost and stops a confused model from looping forever.
-MAX_STEPS = 12
+MAX_STEPS = 16
 # How many times an invalid proposal is sent back to the LLM to fix.
 MAX_REPAIRS = 2
 
@@ -27,6 +29,8 @@ class CopilotResult:
     proposed_agent: dict
     operations: list = field(default_factory=list)
     errors: list = field(default_factory=list)
+    # Filled when the Copilot needs answers before it can build anything.
+    questions: list = field(default_factory=list)
 
 
 async def run_copilot(client, messages: list, agent: dict) -> CopilotResult:
@@ -37,10 +41,15 @@ async def run_copilot(client, messages: list, agent: dict) -> CopilotResult:
 
     for _ in range(MAX_STEPS):
         response = await client.chat.completions.create(
-            model=MODEL, messages=conversation, tools=TOOLS
+            model=MODEL, messages=conversation, tools=TOOLS, temperature=TEMPERATURE
         )
         message = response.choices[0].message
         conversation.append(message.model_dump(exclude_none=True))
+
+        questions = _questions_asked(message)
+        if questions:
+            # Questions come before any change, so the agent is returned untouched.
+            return CopilotResult(message.content or "", copy.deepcopy(agent), questions=questions)
 
         if message.tool_calls:
             for call in message.tool_calls:
@@ -50,6 +59,9 @@ async def run_copilot(client, messages: list, agent: dict) -> CopilotResult:
                         {"tool": call.function.name, "arguments": json.loads(call.function.arguments)}
                     )
                 conversation.append({"role": "tool", "tool_call_id": call.id, "content": result})
+            # Like a linter in an editor: after every step the model sees what is
+            # still broken, instead of finding out only at the end.
+            _add_open_problems(conversation[-1], validation_errors(proposal))
             continue
 
         errors = validation_errors(proposal)
@@ -68,6 +80,13 @@ async def run_copilot(client, messages: list, agent: dict) -> CopilotResult:
     )
 
 
+def _questions_asked(message) -> list:
+    for call in message.tool_calls or []:
+        if call.function.name == ASK_QUESTIONS:
+            return json.loads(call.function.arguments).get("questions", [])
+    return []
+
+
 def validation_errors(agent: dict) -> list:
     try:
         AgentBuilder.from_dict(agent)
@@ -76,6 +95,16 @@ def validation_errors(agent: dict) -> list:
     return []
 
 
+def _add_open_problems(tool_result: dict, errors: list) -> None:
+    if errors:
+        listed = "\n".join(f"- {error}" for error in errors)
+        tool_result["content"] += f"\n\nThe agent still has these problems; fix them before you finish:\n{listed}"
+
+
 def _repair_request(errors: list) -> str:
     listed = "\n".join(f"- {error}" for error in errors)
-    return f"Your changes leave the agent invalid. Fix these with tools:\n{listed}"
+    return (
+        f"Your changes leave the agent invalid. Fix these with tools:\n{listed}\n"
+        "A node that cannot be reached needs add_edge from a step that leads to it. "
+        "Then reply with a summary of everything you changed in this turn."
+    )
