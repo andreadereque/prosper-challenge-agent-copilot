@@ -35,3 +35,6 @@ Thumbs.db
 # ---- Local notes / test output ----
 NOTES.md
 .coverage
+
+# ---- Runtime data ----
+backend/agent.json
