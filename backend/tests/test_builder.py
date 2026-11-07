@@ -34,7 +34,9 @@ def make_agent(**overrides) -> dict:
 
 def test_from_json_reads_the_file(tmp_path):
     path = tmp_path / "agent.json"
-    path.write_text('{"name": "A", "initial_node": "start", "nodes": [{"name": "start"}]}')
+    path.write_text(
+        '{"name": "A", "initial_node": "start", "nodes": [{"name": "start", "end": true}]}'
+    )
 
     builder = AgentBuilder.from_json(path)
 
@@ -119,3 +121,28 @@ async def test_an_end_node_ends_the_call():
 
     assert next_node["functions"] == []
     assert next_node["post_actions"] == [{"type": "end_conversation"}]
+
+
+def test_an_end_node_with_its_own_post_actions_still_ends_the_call():
+    agent = make_agent(initial_node="done")
+    agent["nodes"] = [
+        {"name": "done", "end": True, "post_actions": [{"type": "tts_say", "text": "Bye"}]}
+    ]
+
+    node = AgentBuilder.from_dict(agent).build_initial_node()
+
+    assert node["post_actions"] == [
+        {"type": "tts_say", "text": "Bye"},
+        {"type": "end_conversation"},
+    ]
+
+
+def test_an_explicit_end_conversation_is_not_repeated():
+    agent = make_agent(initial_node="done")
+    agent["nodes"] = [
+        {"name": "done", "end": True, "post_actions": [{"type": "end_conversation"}]}
+    ]
+
+    node = AgentBuilder.from_dict(agent).build_initial_node()
+
+    assert node["post_actions"] == [{"type": "end_conversation"}]
