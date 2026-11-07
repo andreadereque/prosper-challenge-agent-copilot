@@ -32,3 +32,25 @@ export async function saveAgent(agent: Agent): Promise<void> {
     throw new Error(`The server responded with ${response.status}.`);
   }
 }
+
+export type ChatMessage = { role: "user" | "assistant"; content: string };
+
+export type CopilotResult = {
+  reply: string;
+  proposed_agent: Agent;
+  operations: { tool: string; arguments: Record<string, unknown> }[];
+  errors: string[];
+};
+
+export async function askCopilot(messages: ChatMessage[], agent: Agent): Promise<CopilotResult> {
+  const response = await fetch("/api/copilot", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ messages, agent }),
+  });
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new Error(body.error ?? `The server responded with ${response.status}.`);
+  }
+  return response.json();
+}

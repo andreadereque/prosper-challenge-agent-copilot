@@ -2,6 +2,7 @@ import { Background, Controls, ReactFlow, type NodeChange } from "@xyflow/react"
 import "@xyflow/react/dist/style.css";
 import { useMemo } from "react";
 
+import type { AgentDiff } from "../diff/diffAgents";
 import type { Agent, Position, Selection } from "../types";
 import { AgentNodeCard } from "./AgentNodeCard";
 import { agentToFlow, type AgentFlowNode } from "./toFlow";
@@ -15,10 +16,22 @@ type GraphCanvasProps = {
   onSelect: (selection: Selection) => void;
   onMoveNode: (name: string, position: Position) => void;
   onConnect: (source: string, target: string) => void;
+  /** Marks what a Copilot proposal changes. */
+  diff?: AgentDiff;
+  /** While reviewing a proposal, the graph cannot be edited. */
+  readOnly?: boolean;
 };
 
-export function GraphCanvas({ agent, selection, onSelect, onMoveNode, onConnect }: GraphCanvasProps) {
-  const { nodes, edges } = useMemo(() => agentToFlow(agent, selection), [agent, selection]);
+export function GraphCanvas({
+  agent,
+  selection,
+  onSelect,
+  onMoveNode,
+  onConnect,
+  diff,
+  readOnly = false,
+}: GraphCanvasProps) {
+  const { nodes, edges } = useMemo(() => agentToFlow(agent, selection, diff), [agent, selection, diff]);
 
   // The canvas never keeps its own copy of the nodes: a drag is turned into a
   // change on the agent, and the canvas is redrawn from it.
@@ -44,6 +57,8 @@ export function GraphCanvas({ agent, selection, onSelect, onMoveNode, onConnect 
         onConnect={(connection) => onConnect(connection.source, connection.target)}
         // Deleting is done from the side panel, where it is explicit and can be explained.
         deleteKeyCode={null}
+        nodesDraggable={!readOnly}
+        nodesConnectable={!readOnly}
         fitView
       >
         <Background />

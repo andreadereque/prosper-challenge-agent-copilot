@@ -8,6 +8,8 @@ type ToolbarProps = {
   agentName: string;
   hasUnsavedChanges: boolean;
   isSaving: boolean;
+  /** A Copilot proposal is on screen: editing waits until it is accepted or rejected. */
+  isReviewing: boolean;
   onAddNode: () => void;
   onNewAgent: () => void;
   onSave: () => void;
@@ -17,6 +19,7 @@ export function Toolbar({
   agentName,
   hasUnsavedChanges,
   isSaving,
+  isReviewing,
   onAddNode,
   onNewAgent,
   onSave,
@@ -52,16 +55,16 @@ export function Toolbar({
             </button>
           </div>
         )}
-        <button type="button" className="button" onClick={onAddNode}>
+        <button type="button" className="button" disabled={isReviewing} onClick={onAddNode}>
           Add node
         </button>
-        <button type="button" className="button" onClick={startNewAgent}>
+        <button type="button" className="button" disabled={isReviewing} onClick={startNewAgent}>
           New agent
         </button>
         <button
           type="button"
           className="button button--primary"
-          disabled={!hasUnsavedChanges || isSaving}
+          disabled={!hasUnsavedChanges || isSaving || isReviewing}
           onClick={onSave}
         >
           {isSaving && "Saving…"}

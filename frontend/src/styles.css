@@ -296,3 +296,155 @@ a.button {
   background: var(--ground);
   color: var(--muted);
 }
+
+/* ---- Copilot ---- */
+
+.copilot-panel {
+  display: flex;
+  width: 340px;
+  min-height: 0;
+  background: var(--surface);
+  border-left: 1px solid var(--line);
+}
+
+.copilot {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.copilot__title {
+  margin: 0;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+  font-size: 17px;
+}
+
+.copilot__messages {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+  overflow-y: auto;
+}
+
+.copilot__empty {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.suggestion {
+  padding: 8px 10px;
+  font-size: 13px;
+  text-align: left;
+}
+
+.message {
+  margin: 0;
+  padding: 8px 11px;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
+.message--user {
+  align-self: flex-end;
+  max-width: 85%;
+  background: var(--accent-soft);
+}
+
+.message--assistant {
+  background: var(--ground);
+}
+
+.message--pending {
+  color: var(--muted);
+}
+
+.message--failure {
+  background: #fbeceb;
+  color: #7a1c15;
+}
+
+.copilot__composer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--line);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+/* ---- Proposal diff ---- */
+
+.proposal__changes {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 14px;
+}
+
+.proposal__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.agent-node--added {
+  border: 2px solid #1d6fd1;
+  background: #e5f0fc;
+}
+
+.agent-node--edited {
+  border: 2px solid #b26a00;
+  background: #fdf0dc;
+}
+
+.agent-node--removed {
+  border-style: dashed;
+  opacity: 0.55;
+}
+
+.agent-node--removed .agent-node__name {
+  text-decoration: line-through;
+}
+
+.badge--added {
+  background: #1d6fd1;
+  color: #ffffff;
+}
+
+.badge--edited {
+  background: #b26a00;
+  color: #ffffff;
+}
+
+.badge--removed {
+  background: #56687a;
+  color: #ffffff;
+}
+
+.react-flow__edge.edge--added path {
+  stroke: #1d6fd1;
+  stroke-width: 2;
+  stroke-dasharray: 6 4;
+}
+
+.react-flow__edge.edge--edited path {
+  stroke: #b26a00;
+  stroke-width: 2;
+}
+
+.react-flow__edge.edge--removed path {
+  stroke: #9aa8b3;
+  stroke-dasharray: 3 4;
+}

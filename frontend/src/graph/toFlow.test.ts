@@ -51,4 +51,17 @@ describe("agentToFlow", () => {
 
     expect(edges.map((edge) => edge.selected)).toEqual([false, true]);
   });
+
+  it("marks what a proposal changes", () => {
+    const diff = {
+      nodes: new Map([["confirm", "edited" as const]]),
+      edges: new Map([["greeting:choose_intent", "removed" as const]]),
+      fields: [],
+    };
+
+    const { nodes, edges } = agentToFlow(makeAgent(), null, diff);
+
+    expect(nodes.map((node) => node.data.change)).toEqual([undefined, undefined, "edited"]);
+    expect(edges.map((edge) => edge.className)).toEqual(["edge--removed", undefined]);
+  });
 });
