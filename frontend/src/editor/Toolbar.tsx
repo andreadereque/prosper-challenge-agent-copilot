@@ -1,13 +1,26 @@
 import { useState } from "react";
 
+// Pipecat's prebuilt client, served by the backend. It reads the saved agent
+// when you press Connect, which is why calling needs everything saved first.
+export const TEST_CALL_URL = "http://localhost:7860/client/";
+
 type ToolbarProps = {
   agentName: string;
   hasUnsavedChanges: boolean;
+  isSaving: boolean;
   onAddNode: () => void;
   onNewAgent: () => void;
+  onSave: () => void;
 };
 
-export function Toolbar({ agentName, hasUnsavedChanges, onAddNode, onNewAgent }: ToolbarProps) {
+export function Toolbar({
+  agentName,
+  hasUnsavedChanges,
+  isSaving,
+  onAddNode,
+  onNewAgent,
+  onSave,
+}: ToolbarProps) {
   const [confirmingNewAgent, setConfirmingNewAgent] = useState(false);
 
   function startNewAgent() {
@@ -45,6 +58,25 @@ export function Toolbar({ agentName, hasUnsavedChanges, onAddNode, onNewAgent }:
         <button type="button" className="button" onClick={startNewAgent}>
           New agent
         </button>
+        <button
+          type="button"
+          className="button button--primary"
+          disabled={!hasUnsavedChanges || isSaving}
+          onClick={onSave}
+        >
+          {isSaving && "Saving…"}
+          {!isSaving && "Save"}
+        </button>
+        {hasUnsavedChanges && (
+          <button type="button" className="button" disabled title="Save first: the call uses the saved agent.">
+            Call
+          </button>
+        )}
+        {!hasUnsavedChanges && (
+          <a className="button button--primary" href={TEST_CALL_URL} target="_blank" rel="noreferrer">
+            Call
+          </a>
+        )}
       </div>
     </header>
   );
