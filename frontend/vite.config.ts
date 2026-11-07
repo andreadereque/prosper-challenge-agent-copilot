@@ -7,6 +7,8 @@ export default defineConfig({
     // The API lives on Pipecat's runner (bot.py). Proxying keeps the frontend
     // on relative URLs, so there is no CORS setup.
     proxy: { "/api": "http://localhost:7860" },
+    // Test runs write coverage reports; they should not reload the editor.
+    watch: { ignored: ["**/coverage/**"] },
   },
   test: {
     environment: "jsdom",

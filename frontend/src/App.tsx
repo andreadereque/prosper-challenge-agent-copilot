@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
 import { fetchAgent } from "./api";
-import { GraphCanvas } from "./graph/GraphCanvas";
+import { Editor } from "./editor/Editor";
 import type { Agent } from "./types";
 
 type LoadState =
@@ -28,12 +28,5 @@ export function App() {
       </p>
     );
   }
-  return (
-    <div className="app">
-      <header className="toolbar">
-        <h1 className="toolbar__title">{state.agent.name}</h1>
-      </header>
-      <GraphCanvas agent={state.agent} />
-    </div>
-  );
+  return <Editor initialAgent={state.agent} />;
 }

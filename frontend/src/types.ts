@@ -38,3 +38,9 @@ export type Agent = {
   voice_id?: string;
   model?: string;
 };
+
+/** What the side panel is editing. `null` means the agent's own settings. */
+export type Selection =
+  | { kind: "node"; name: string }
+  | { kind: "edge"; node: string; tool: string }
+  | null;

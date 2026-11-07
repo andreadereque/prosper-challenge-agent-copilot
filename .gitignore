@@ -22,6 +22,7 @@ env/
 # ---- Node / frontend (Phase 1 UI later) ----
 node_modules/
 coverage/
+.vite/
 .next/
 dist/
 *.log

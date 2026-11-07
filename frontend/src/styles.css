@@ -84,3 +84,141 @@ body {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
 }
+
+.toolbar__status {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.workspace {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.side-panel {
+  width: 360px;
+  overflow-y: auto;
+  background: var(--surface);
+  border-left: 1px solid var(--line);
+}
+
+.react-flow__node.selected .agent-node {
+  border: 2px solid var(--accent);
+  margin: -1px;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px;
+}
+
+.panel__title {
+  margin: 0;
+  font-size: 17px;
+}
+
+.panel__subtitle {
+  margin: 8px 0 0;
+  font-size: 15px;
+}
+
+.panel__hint,
+.field__hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.field__label {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.field__input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #8a9aa6;
+  border-radius: 5px;
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+}
+
+.field__input--mono {
+  font-family: "JetBrains Mono", Menlo, monospace;
+  font-size: 13px;
+}
+
+.field__input[aria-invalid="true"] {
+  border-color: #b3261e;
+}
+
+.field__error {
+  color: #b3261e;
+  font-size: 13px;
+}
+
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.button {
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--ink);
+  border-radius: 5px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.button--quiet {
+  min-height: 32px;
+  border-color: var(--line);
+  font-weight: 400;
+}
+
+.property {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.property__legend {
+  padding: 0 4px;
+  font-family: "JetBrains Mono", Menlo, monospace;
+  font-size: 13px;
+}
+
+.property__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.transition-link {
+  justify-content: flex-start;
+  font-family: "JetBrains Mono", Menlo, monospace;
+  font-size: 13px;
+  text-align: left;
+}
